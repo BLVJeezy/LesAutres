@@ -38,6 +38,7 @@ import {
 } from "@/lib/catalog";
 import { onSubscribe, onCheckout, trackEvent } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
+import { ShotCarousel } from "./shot-carousel";
 const Scene = dynamic(() => import("./scene"), { ssr: false });
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -163,15 +164,17 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
   );
 }
 const photos = [
-  { id: "photo-1515886657613-9f3515b0c78f", alt: "Streetstyle in de stad" },
-  { id: "photo-1483985988355-763728e1935b", alt: "Een moment op straat" },
   {
-    id: "photo-1523398002811-999ca8dec234",
-    alt: "Streetwear in natuurlijk licht",
+    src: "/images/perspective-rooftop.jpg",
+    alt: "Figuur in zwarte hoodie op een betonnen dak bij zonsopgang",
   },
   {
-    id: "photo-1483985988355-763728e1935b",
-    alt: "Stedelijke stijl, een ander perspectief",
+    src: "/images/perspective-drop.jpg",
+    alt: "Chromen DROP 001 letters met de Baddies Tee erin weerspiegeld",
+  },
+  {
+    src: "/images/perspective-print.jpg",
+    alt: "Close-up van de BADDIES IN BELGICA print",
   },
 ];
 export default function Store() {
@@ -369,17 +372,8 @@ export default function Store() {
             <span>SCROLL TO EXPLORE ↓</span>
           </div>
         </section>
-        <div className="mobile-perspective-photos photo-strip">
-          {photos.map((photo, i) => (
-            <div className={`photo photo-${i}`} key={i}>
-              <Image
-                src={`https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=900&q=85`}
-                alt={photo.alt}
-                fill
-                sizes="(max-width: 700px) 80vw, 25vw"
-              />
-            </div>
-          ))}
+        <div className="mobile-perspective-photos">
+          <ShotCarousel photos={photos} />
         </div>
         <section id="perspective" className="editorial">
           <div className="section-label">
@@ -390,7 +384,7 @@ export default function Store() {
             {photos.map((photo, i) => (
               <div className={`photo photo-${i}`} key={i}>
                 <Image
-                  src={`https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=900&q=85`}
+                  src={photo.src}
                   alt={photo.alt}
                   fill
                   sizes="(max-width: 700px) 80vw, 25vw"
@@ -638,6 +632,14 @@ export default function Store() {
           Preview — handelsnaam, adres, contact en ondernemingsnummer worden
           vóór de lancering ingevuld.
         </p>
+        <a
+          className="created-by"
+          href="https://solynglobal.be"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Created by Solyn Global <ArrowUpRight size={14} />
+        </a>
       </footer>
       {sticky && !sheet && (
         <div className="sticky-buy">

@@ -260,7 +260,7 @@ p {
 }
 .photo-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 13px;
 }
 .mobile-perspective-photos {
@@ -268,27 +268,37 @@ p {
 }
 .photo {
   position: relative;
-  aspect-ratio: 4/5;
+  aspect-ratio: 16/9;
   overflow: hidden;
   background: #242620;
 }
 .photo img {
   object-fit: cover;
-  filter: grayscale(0.8) brightness(0.68);
+  filter: brightness(0.85);
   transition:
     filter 0.4s,
     transform 0.7s;
 }
 .photo:hover img {
-  filter: grayscale(0.3) brightness(0.85);
+  filter: brightness(1);
   transform: scale(1.025);
 }
-.photo-1 img {
-  object-position: 70%;
+.shot-carousel {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/9;
+  overflow: hidden;
 }
-.photo-3 img {
-  object-position: 20%;
-  transform: scaleX(-1);
+.shot-slide {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--bg2);
+  will-change: transform, opacity;
+}
+.shot-slide img {
+  object-fit: cover;
 }
 .editorial-foot {
   display: flex;
@@ -732,6 +742,28 @@ footer {
   color: #868d7a;
   margin: 20px 0 0;
 }
+.created-by {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font: 600 11px monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
+}
+.created-by:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
 .sticky-buy {
   position: fixed;
   bottom: 0;
@@ -1086,21 +1118,15 @@ footer {
     display: none;
   }
   .mobile-perspective-photos {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 8px;
-    padding: 24px 20px 32px;
-    scrollbar-width: none;
+    display: block;
+    padding: 24px 0 32px;
+    overflow: hidden;
     background: linear-gradient(180deg, var(--bg), transparent);
   }
-  .mobile-perspective-photos::-webkit-scrollbar {
-    display: none;
-  }
-  .mobile-perspective-photos .photo {
-    flex: 0 0 68vw;
-    scroll-snap-align: center;
-    aspect-ratio: 4/5;
+  .shot-carousel {
+    width: 84vw;
+    margin: 0 auto;
+    overflow: visible;
   }
   .photo-strip {
     display: flex;
