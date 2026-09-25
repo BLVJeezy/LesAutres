@@ -7,7 +7,7 @@ type Photo = { src: string; alt: string };
 
 const HOLD_MS = 2000;
 const SHOT_S = 0.9;
-const OFFSET_VW = 70;
+const OFFSET_VW = 62;
 
 export function ShotCarousel({ photos }: { photos: Photo[] }) {
   const reduced = useReducedMotion();
@@ -48,16 +48,15 @@ export function ShotCarousel({ photos }: { photos: Photo[] }) {
             className="shot-slide"
             aria-hidden={rel !== 0}
             initial={false}
-            animate={
-              reduced
-                ? { x: 0, scale: 1, opacity: rel === 0 ? 1 : 0 }
-                : {
-                    x: `${rel * OFFSET_VW}vw`,
-                    scale: rel === 0 ? 1 : 0.85,
-                    opacity: rel === 0 ? 1 : visible ? 0.45 : 0,
-                  }
-            }
-            transition={{ duration: SHOT_S, ease: [0.16, 1, 0.3, 1] }}
+            animate={{
+              x: `${rel * OFFSET_VW}vw`,
+              scale: rel === 0 ? 1 : 0.86,
+              opacity: rel === 0 ? 1 : visible ? 0.55 : 0,
+            }}
+            transition={{
+              duration: reduced ? 0.3 : SHOT_S,
+              ease: [0.16, 1, 0.3, 1],
+            }}
             style={{ zIndex: rel === 0 ? 2 : 1 }}
           >
             <Image

@@ -174,8 +174,8 @@ const { props: heroMobile } = getImageProps({
 });
 const photos = [
   {
-    src: "/images/perspective-rooftop.jpg",
-    alt: "Figuur in zwarte hoodie op een betonnen dak bij zonsopgang",
+    src: "/images/perspective-street.jpg",
+    alt: "Man in de Baddies Tee tegen een roestige stalen pilaar op een bouwwerf",
   },
   {
     src: "/images/perspective-drop.jpg",
