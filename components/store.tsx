@@ -315,7 +315,7 @@ export default function Store() {
           </div>
           <div className="hero-backdrop" aria-hidden>
             <Image
-              src="/images/hero-campaign.jpg"
+              src="/images/hero-sunset.jpg"
               alt=""
               fill
               priority
