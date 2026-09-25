@@ -257,6 +257,9 @@ p {
   grid-template-columns: repeat(4, 1fr);
   gap: 13px;
 }
+.mobile-perspective-photos {
+  display: none;
+}
 .photo {
   position: relative;
   aspect-ratio: 4/5;
@@ -1073,15 +1076,25 @@ footer {
   .hero-rule span:last-child {
     display: none;
   }
-  .editorial {
-    padding: 36px 0 38px;
-  }
-  .section-label {
-    padding: 0 6%;
-    font-size: 8px;
-  }
-  .section-label > span:last-child {
+  #perspective.editorial {
     display: none;
+  }
+  .mobile-perspective-photos {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    padding: 26px 6% 30px;
+    scrollbar-width: none;
+    background: linear-gradient(180deg, #101110, #14161200);
+  }
+  .mobile-perspective-photos::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-perspective-photos .photo {
+    flex: 0 0 68vw;
+    scroll-snap-align: center;
+    aspect-ratio: 4/5;
   }
   .photo-strip {
     display: flex;
@@ -1095,15 +1108,6 @@ footer {
     flex: 0 0 78vw;
     scroll-snap-align: center;
     aspect-ratio: 4/5;
-  }
-  .editorial-foot {
-    padding: 0 6%;
-  }
-  .editorial-foot .micro {
-    font-size: 7px;
-  }
-  .editorial-foot .tiny {
-    font-size: 8px;
   }
   .product-section {
     display: flex;
@@ -1140,9 +1144,13 @@ footer {
     padding: 40px 6% 50px;
   }
   .product-info h2 {
-    font-size: 56px;
-    letter-spacing: -2px;
+    font-size: 34px;
+    letter-spacing: -1.5px;
     margin: 22px 0;
+    white-space: nowrap;
+  }
+  .product-info h2 br {
+    display: none;
   }
   .price-row {
     margin-bottom: 20px;
@@ -1164,11 +1172,45 @@ footer {
     min-height: 48px;
   }
   .trust {
-    font-size: 9px;
-    margin-top: 25px;
+    font-size: 12px;
+    margin-top: 28px;
+    gap: 10px;
+    color: #d3d5c8;
+  }
+  .trust span {
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+    padding: 12px 6px;
+    border: 1px solid #2c3024;
+    background: linear-gradient(135deg, #1e211a, #16181300);
+    border-radius: 4px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .trust svg {
+    width: 18px;
+    height: 18px;
+    stroke-width: 1.5;
+    flex-shrink: 0;
   }
   .payments {
-    gap: 20px;
+    gap: 8px;
+    margin: 22px 0 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    font-size: 10px;
+  }
+  .payments b,
+  .payments span {
+    font: 600 10px monospace;
+    letter-spacing: 0.8px;
+    padding: 7px 11px;
+    border: 1px solid #2c3024;
+    border-radius: 4px;
+    background: #1a1c17;
+    color: #cfd2c3;
+    text-transform: uppercase;
   }
   .manifesto {
     padding: 62px 6%;
