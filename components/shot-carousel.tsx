@@ -1,12 +1,13 @@
 "use client";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion, type PanInfo } from "framer-motion";
 
 type Photo = { src: string; alt: string };
 
 const HOLD_MS = 2000;
 const SHOT_S = 0.9;
+const OFFSET_VW = 70;
 
 export function ShotCarousel({ photos }: { photos: Photo[] }) {
   const reduced = useReducedMotion();
@@ -16,16 +17,27 @@ export function ShotCarousel({ photos }: { photos: Photo[] }) {
   const n = slides.length;
 
   useEffect(() => {
-    if (reduced) return;
     const id = setInterval(
       () => setIndex((i) => (i + 1) % n),
       HOLD_MS + SHOT_S * 1000,
     );
     return () => clearInterval(id);
-  }, [reduced, n]);
+  }, [n, index]);
+
+  function onDragEnd(_: unknown, info: PanInfo) {
+    if (Math.abs(info.offset.x) < 40) return;
+    setIndex((i) => (i + (info.offset.x < 0 ? 1 : -1) + n) % n);
+  }
 
   return (
-    <div className="shot-carousel" aria-roledescription="carousel">
+    <motion.div
+      className="shot-carousel"
+      aria-roledescription="carousel"
+      drag="x"
+      dragConstraints={{ left: 0, right: 0 }}
+      dragElastic={0.15}
+      onDragEnd={onDragEnd}
+    >
       {slides.map((photo, i) => {
         let rel = (i - index + n) % n;
         if (rel > n / 2) rel -= n;
@@ -36,11 +48,15 @@ export function ShotCarousel({ photos }: { photos: Photo[] }) {
             className="shot-slide"
             aria-hidden={rel !== 0}
             initial={false}
-            animate={{
-              x: `${rel * 88}vw`,
-              scale: rel === 0 ? 1 : 0.82,
-              opacity: rel === 0 ? 1 : visible ? 0.4 : 0,
-            }}
+            animate={
+              reduced
+                ? { x: 0, scale: 1, opacity: rel === 0 ? 1 : 0 }
+                : {
+                    x: `${rel * OFFSET_VW}vw`,
+                    scale: rel === 0 ? 1 : 0.85,
+                    opacity: rel === 0 ? 1 : visible ? 0.45 : 0,
+                  }
+            }
             transition={{ duration: SHOT_S, ease: [0.16, 1, 0.3, 1] }}
             style={{ zIndex: rel === 0 ? 2 : 1 }}
           >
@@ -48,12 +64,13 @@ export function ShotCarousel({ photos }: { photos: Photo[] }) {
               src={photo.src}
               alt={photo.alt}
               fill
-              sizes="70vw"
+              sizes="75vw"
+              draggable={false}
               priority={i === 0}
             />
           </motion.div>
         );
       })}
-    </div>
+    </motion.div>
   );
 }
