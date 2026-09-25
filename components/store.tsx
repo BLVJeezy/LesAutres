@@ -178,9 +178,6 @@ const photos = [
   },
 ];
 export default function Store() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const heroVisible = useInView(heroRef);
-  const [heroReady, setHeroReady] = useState(false);
   const [shirtReady, setShirtReady] = useState(false);
   const color = colors[0];
   const [productView, setProductView] = useState<"photo" | "360">("photo");
@@ -194,7 +191,6 @@ export default function Store() {
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState<string | null>("loading");
   const [webgl, setWebgl] = useState(false);
-  const [heroFailed, setHeroFailed] = useState(false);
   const [shirtFailed, setShirtFailed] = useState(false);
   const [touched, setTouched] = useState(false);
   const [sticky, setSticky] = useState(false);
@@ -317,40 +313,17 @@ export default function Store() {
               </span>
             </span>
           </div>
-          <div className="hero-title" ref={heroRef}>
+          <div className="hero-backdrop" aria-hidden>
+            <Image
+              src="/images/hero-campaign.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+            />
+          </div>
+          <div className="hero-title">
             <h1 className="sr-only">Les Autres</h1>
-            {!(webgl && !heroFailed && heroReady && heroVisible) && (
-              <Image
-                className="hero-poster"
-                src="/renders/hero.png"
-                alt=""
-                width={700}
-                height={700}
-                priority
-                sizes="(max-width: 700px) 90vw, 800px"
-              />
-            )}
-            {webgl && !heroFailed && heroVisible && (
-              <SceneBoundary
-                fallback={
-                  <Image
-                    className="hero-poster"
-                    src="/renders/hero.png"
-                    alt=""
-                    width={700}
-                    height={700}
-                  />
-                }
-              >
-                <Scene
-                  mode="hero"
-                  onReady={() => setHeroReady(true)}
-                  color={color}
-                  reduced={!!reduced}
-                  onFail={() => setHeroFailed(true)}
-                />
-              </SceneBoundary>
-            )}
           </div>
           <div className="hero-bottom">
             <p>

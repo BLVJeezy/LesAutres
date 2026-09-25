@@ -156,6 +156,37 @@ p {
   display: flex;
   flex-direction: column;
 }
+.hero-backdrop {
+  position: absolute;
+  top: 0;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  aspect-ratio: 1252 / 1011;
+  z-index: 0;
+  pointer-events: none;
+  -webkit-mask-image:
+    linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent),
+    linear-gradient(180deg, #000 70%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(90deg, transparent, #000 24%, #000 76%, transparent),
+    linear-gradient(180deg, #000 70%, transparent);
+  mask-composite: intersect;
+}
+.hero-backdrop img {
+  object-fit: cover;
+}
+.hero-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), transparent 20%);
+}
+.hero-section > :not(.hero-backdrop) {
+  position: relative;
+  z-index: 1;
+}
 .hero-top {
   display: flex;
   justify-content: space-between;
