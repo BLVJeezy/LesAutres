@@ -3,45 +3,10 @@ export type Size = (typeof sizes)[number];
 export const colors = [
   {
     id: "white-black",
-    name: "Off-white / black",
+    name: "Off-white / roze & zwart",
     fabric: "#e8e5dd",
     ink: "#20201f",
     accent: "#bf657b",
-  },
-  {
-    id: "black-pink",
-    name: "Black / pink",
-    fabric: "#252525",
-    ink: "#e799b0",
-    accent: "#e799b0",
-  },
-  {
-    id: "pink-burgundy",
-    name: "Pink / burgundy",
-    fabric: "#cd91a1",
-    ink: "#591f35",
-    accent: "#591f35",
-  },
-  {
-    id: "cream-camo",
-    name: "Cream / camo",
-    fabric: "#d6cbb1",
-    ink: "#4b5141",
-    accent: "#697053",
-  },
-  {
-    id: "grey-white",
-    name: "Vintage grey / off-white",
-    fabric: "#777775",
-    ink: "#eae6db",
-    accent: "#eae6db",
-  },
-  {
-    id: "white-pink",
-    name: "White / pink",
-    fabric: "#e8e5dd",
-    ink: "#bd637b",
-    accent: "#bd637b",
   },
 ] as const;
 export type Colorway = (typeof colors)[number];

@@ -6,7 +6,7 @@ export const contentType = "image/png";
 export const alt = "Les Autres — Drop 001, The Baddies Tee";
 export default async function OG() {
   const data = await readFile(
-    path.join(process.cwd(), "public/images/tech-sheet.jpeg"),
+    path.join(process.cwd(), "public/images/drop-001-product.jpeg"),
   );
   return new ImageResponse(
     <div

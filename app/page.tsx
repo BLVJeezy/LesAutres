@@ -13,7 +13,7 @@ export default function Home() {
               "Drop 001. Boxy oversized T-shirt, 100% katoen, 240 GSM.",
             brand: { "@type": "Brand", name: "Les Autres" },
             material: "100% katoen",
-            image: "/images/tech-sheet.jpeg",
+            image: "/images/drop-001-product.jpeg",
           }),
         }}
       />

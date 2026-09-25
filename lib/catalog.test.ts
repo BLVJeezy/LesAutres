@@ -15,3 +15,10 @@ test("stock and preorders coexist", () => {
   assert.equal(availability("white-black", "M").kind, "stock");
   assert.equal(availability("white-black", "XL").kind, "preorder");
 });
+
+test("removed colour variants cannot enter a restored or new cart", () => {
+  assert.deepEqual(
+    addItem([], { color: "black-pink", size: "M", quantity: 1 }),
+    [],
+  );
+});

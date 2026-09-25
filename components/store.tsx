@@ -179,8 +179,8 @@ export default function Store() {
   const heroVisible = useInView(heroRef);
   const [heroReady, setHeroReady] = useState(false);
   const [shirtReady, setShirtReady] = useState(false);
-  const [colorIndex, setColorIndex] = useState(0);
-  const color = colors[colorIndex];
+  const color = colors[0];
+  const [productView, setProductView] = useState<"photo" | "360">("photo");
   const [size, setSize] = useState<Size>();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sheet, setSheet] = useState<"cart" | "sizes" | "waitlist" | null>(
@@ -191,12 +191,15 @@ export default function Store() {
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState<string | null>("loading");
   const [webgl, setWebgl] = useState(false);
+  const [heroFailed, setHeroFailed] = useState(false);
+  const [shirtFailed, setShirtFailed] = useState(false);
   const [touched, setTouched] = useState(false);
   const [sticky, setSticky] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const reduced = useReducedMotion();
   const viewer = useRef<HTMLDivElement>(null);
-  const productVisible = useInView(viewer, { margin: "200px" });
+  const productVisible = useInView(viewer, { margin: "250px", once: true });
+  const productOnscreen = useInView(viewer);
   const stock = size ? availability(color.id, size) : null;
   useEffect(() => {
     setConsent(localStorage.getItem("la-consent"));
@@ -217,7 +220,9 @@ export default function Store() {
     } catch {}
     setLoaded(true);
     const canvas = document.createElement("canvas");
-    setWebgl(!!(canvas.getContext("webgl2") || canvas.getContext("webgl")));
+    const gl = canvas.getContext("webgl2");
+    setWebgl(!!gl);
+    gl?.getExtension("WEBGL_lose_context")?.loseContext();
     trackEvent("view_product", { product: "drop-001" });
   }, []);
   useEffect(() => {
@@ -310,19 +315,36 @@ export default function Store() {
             </span>
           </div>
           <div className="hero-title" ref={heroRef}>
-            <h1 className={webgl && heroReady && heroVisible ? "sr-only" : ""}>
-              LES AUTRES
-            </h1>
-            {webgl && heroVisible && (
+            <h1 className="sr-only">Les Autres</h1>
+            {!(webgl && !heroFailed && heroReady && heroVisible) && (
+              <Image
+                className="hero-poster"
+                src="/renders/hero.png"
+                alt=""
+                width={700}
+                height={700}
+                priority
+                sizes="(max-width: 700px) 90vw, 800px"
+              />
+            )}
+            {webgl && !heroFailed && heroVisible && (
               <SceneBoundary
-                fallback={<div className="hero-static">LES AUTRES</div>}
+                fallback={
+                  <Image
+                    className="hero-poster"
+                    src="/renders/hero.png"
+                    alt=""
+                    width={700}
+                    height={700}
+                  />
+                }
               >
                 <Scene
                   mode="hero"
                   onReady={() => setHeroReady(true)}
                   color={color}
                   reduced={!!reduced}
-                  onFail={() => setWebgl(false)}
+                  onFail={() => setHeroFailed(true)}
                 />
               </SceneBoundary>
             )}
@@ -370,46 +392,68 @@ export default function Store() {
           </div>
         </section>
         <section id="drop" className="product-section">
-          <div className="product-stage" ref={viewer}>
+          <div
+            className={`product-stage ${productView === "photo" ? "photo-mode" : "view-360"}`}
+            ref={viewer}
+          >
             <div className="stage-label">
               <span className="micro">THE FIRST CHAPTER</span>
               <span className="edition">001</span>
             </div>
             <div className="product-render">
-              {webgl && productVisible && !shirtReady && (
-                <div className="render-placeholder">
-                  <ShirtFallback color={color} />
-                </div>
-              )}
-              {webgl && productVisible ? (
-                <SceneBoundary fallback={<ShirtFallback color={color} />}>
-                  <Scene
-                    mode="shirt"
-                    onReady={() => setShirtReady(true)}
-                    color={color}
-                    reduced={!!reduced}
-                    onInteract={() => setTouched(true)}
-                    onFail={() => setWebgl(false)}
-                  />
-                </SceneBoundary>
+              {productView === "360" &&
+              webgl &&
+              !shirtFailed &&
+              productVisible ? (
+                <>
+                  {!shirtReady && (
+                    <div className="render-placeholder">
+                      <ShirtFallback color={color} />
+                    </div>
+                  )}
+                  <SceneBoundary fallback={<ShirtFallback color={color} />}>
+                    <Scene
+                      mode="shirt"
+                      active={productOnscreen}
+                      onReady={() => setShirtReady(true)}
+                      color={color}
+                      reduced={!!reduced}
+                      onInteract={() => setTouched(true)}
+                      onFail={() => setShirtFailed(true)}
+                    />
+                  </SceneBoundary>
+                </>
               ) : (
-                <ShirtFallback color={color} />
+                <Image
+                  className="official-product-photo"
+                  src="/images/drop-001-product.jpeg"
+                  alt="The Baddies Tee — off-white T-shirt met roze BADDIES en zwarte IN BELGICA, HOLLANDA, FRANSA, ESPAGNA print"
+                  width={1085}
+                  height={992}
+                  sizes="(max-width: 700px) 100vw, 50vw"
+                />
               )}
             </div>
             <div className="viewer-foot">
               <span className="micro">240 GSM · 100% COTTON</span>
-              <span className="drag-hint">
-                {webgl && !touched ? (
-                  <>
-                    <MoveHorizontal size={16} /> SLEEP OM TE DRAAIEN
-                  </>
-                ) : (
-                  <>
-                    <Globe size={16} /> A DIFFERENT PERSPECTIVE
-                  </>
-                )}
-              </span>
+              {webgl && !shirtFailed && (
+                <button
+                  className="view-toggle"
+                  onClick={() => {
+                    setProductView(productView === "photo" ? "360" : "photo");
+                    setShirtReady(false);
+                  }}
+                >
+                  <RotateCcw size={15} />
+                  {productView === "photo" ? "360° BEKIJKEN" : "FOTO BEKIJKEN"}
+                </button>
+              )}
             </div>
+            {productView === "360" && !touched && !shirtFailed && (
+              <span className="rotation-caption">
+                <MoveHorizontal size={14} /> SLEEP OM TE DRAAIEN
+              </span>
+            )}
           </div>
           <div className="product-info">
             <div className="drop-label">
@@ -431,33 +475,9 @@ export default function Store() {
               Eén statement, vier landen. Voor de anderen.
             </p>
             <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
+            <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
             <div className="selector-head">
-              <span>01 — COLORWAY</span>
-              <span>{color.name}</span>
-            </div>
-            <div className="swatches">
-              {colors.map((c, i) => (
-                <button
-                  key={c.id}
-                  aria-label={c.name}
-                  aria-pressed={i === colorIndex}
-                  className={i === colorIndex ? "selected" : ""}
-                  onClick={() => {
-                    setColorIndex(i);
-                    trackEvent("select_colorway", { color: c.id });
-                  }}
-                >
-                  <span
-                    style={{
-                      background: `linear-gradient(135deg, ${c.fabric} 55%, ${c.accent} 55%)`,
-                    }}
-                  />
-                  {i === colorIndex && <span className="swatch-dot" />}
-                </button>
-              ))}
-            </div>
-            <div className="selector-head">
-              <span>02 — SIZE</span>
+              <span>01 — MAAT</span>
               <button className="text-button" onClick={() => setSheet("sizes")}>
                 MAATTABEL <ArrowUpRight size={12} />
               </button>
