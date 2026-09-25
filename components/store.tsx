@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import Image from "next/image";
+import Image, { getImageProps } from "next/image";
 import Link from "next/link";
 import {
   Component,
@@ -163,6 +163,15 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
     </form>
   );
 }
+const heroCommon = { alt: "", fill: true, priority: true, sizes: "100vw" };
+const {
+  props: { srcSet: heroDesktopSrcSet },
+} = getImageProps({ ...heroCommon, src: "/images/hero-sunset-wide.jpg" });
+const heroDesktop = { srcSet: heroDesktopSrcSet };
+const { props: heroMobile } = getImageProps({
+  ...heroCommon,
+  src: "/images/hero-sunset.jpg",
+});
 const photos = [
   {
     src: "/images/perspective-rooftop.jpg",
@@ -178,9 +187,6 @@ const photos = [
   },
 ];
 export default function Store() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const heroVisible = useInView(heroRef);
-  const [heroReady, setHeroReady] = useState(false);
   const [shirtReady, setShirtReady] = useState(false);
   const color = colors[0];
   const [productView, setProductView] = useState<"photo" | "360">("photo");
@@ -194,7 +200,6 @@ export default function Store() {
   const [busy, setBusy] = useState(false);
   const [consent, setConsent] = useState<string | null>("loading");
   const [webgl, setWebgl] = useState(false);
-  const [heroFailed, setHeroFailed] = useState(false);
   const [shirtFailed, setShirtFailed] = useState(false);
   const [touched, setTouched] = useState(false);
   const [sticky, setSticky] = useState(false);
@@ -317,40 +322,18 @@ export default function Store() {
               </span>
             </span>
           </div>
-          <div className="hero-title" ref={heroRef}>
-            <h1 className="sr-only">Les Autres</h1>
-            {!(webgl && !heroFailed && heroReady && heroVisible) && (
-              <Image
-                className="hero-poster"
-                src="/renders/hero.png"
-                alt=""
-                width={700}
-                height={700}
-                priority
-                sizes="(max-width: 700px) 90vw, 800px"
+          <div className="hero-backdrop" aria-hidden>
+            <picture>
+              <source
+                media="(min-width: 701px)"
+                srcSet={heroDesktop.srcSet}
+                sizes="100vw"
               />
-            )}
-            {webgl && !heroFailed && heroVisible && (
-              <SceneBoundary
-                fallback={
-                  <Image
-                    className="hero-poster"
-                    src="/renders/hero.png"
-                    alt=""
-                    width={700}
-                    height={700}
-                  />
-                }
-              >
-                <Scene
-                  mode="hero"
-                  onReady={() => setHeroReady(true)}
-                  color={color}
-                  reduced={!!reduced}
-                  onFail={() => setHeroFailed(true)}
-                />
-              </SceneBoundary>
-            )}
+              <img {...heroMobile} alt="" />
+            </picture>
+          </div>
+          <div className="hero-title">
+            <h1 className="sr-only">Les Autres</h1>
           </div>
           <div className="hero-bottom">
             <p>
