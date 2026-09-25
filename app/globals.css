@@ -1163,7 +1163,7 @@ footer {
     background: linear-gradient(180deg, var(--bg), transparent);
   }
   .shot-carousel {
-    width: 72vw;
+    width: 64vw;
     margin: 0 auto;
     overflow: visible;
   }
