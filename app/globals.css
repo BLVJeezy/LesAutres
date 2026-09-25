@@ -1,11 +1,17 @@
 @import "tailwindcss";
 :root {
   --bg: #101110;
-  --panel: #191a18;
+  --bg2: #191a18;
+  --surface: #1e211a;
+  --border: #34362f;
   --text: #efeee8;
-  --muted: #989a92;
-  --line: #34362f;
-  --pink: #d595a4;
+  --text-dim: #989a92;
+  --accent: #d595a4;
+  --accent-dim: rgba(213, 149, 164, 0.15);
+  --panel: var(--bg2);
+  --muted: var(--text-dim);
+  --line: var(--border);
+  --pink: var(--accent);
 }
 * {
   box-sizing: border-box;
@@ -256,6 +262,9 @@ p {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 13px;
+}
+.mobile-perspective-photos {
+  display: none;
 }
 .photo {
   position: relative;
@@ -1073,15 +1082,25 @@ footer {
   .hero-rule span:last-child {
     display: none;
   }
-  .editorial {
-    padding: 36px 0 38px;
-  }
-  .section-label {
-    padding: 0 6%;
-    font-size: 8px;
-  }
-  .section-label > span:last-child {
+  #perspective.editorial {
     display: none;
+  }
+  .mobile-perspective-photos {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 8px;
+    padding: 24px 20px 32px;
+    scrollbar-width: none;
+    background: linear-gradient(180deg, var(--bg), transparent);
+  }
+  .mobile-perspective-photos::-webkit-scrollbar {
+    display: none;
+  }
+  .mobile-perspective-photos .photo {
+    flex: 0 0 68vw;
+    scroll-snap-align: center;
+    aspect-ratio: 4/5;
   }
   .photo-strip {
     display: flex;
@@ -1095,15 +1114,6 @@ footer {
     flex: 0 0 78vw;
     scroll-snap-align: center;
     aspect-ratio: 4/5;
-  }
-  .editorial-foot {
-    padding: 0 6%;
-  }
-  .editorial-foot .micro {
-    font-size: 7px;
-  }
-  .editorial-foot .tiny {
-    font-size: 8px;
   }
   .product-section {
     display: flex;
@@ -1140,9 +1150,13 @@ footer {
     padding: 40px 6% 50px;
   }
   .product-info h2 {
-    font-size: 56px;
-    letter-spacing: -2px;
+    font-size: 34px;
+    letter-spacing: -1.5px;
     margin: 22px 0;
+    white-space: nowrap;
+  }
+  .product-info h2 br {
+    display: none;
   }
   .price-row {
     margin-bottom: 20px;
@@ -1164,11 +1178,48 @@ footer {
     min-height: 48px;
   }
   .trust {
-    font-size: 9px;
-    margin-top: 25px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 24px;
+    gap: 8px;
+    color: var(--text);
+  }
+  .trust span {
+    gap: 8px;
+    flex: 1;
+    justify-content: center;
+    padding: 16px 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    border-radius: 4px;
+    text-align: center;
+    line-height: 1.2;
+  }
+  .trust svg {
+    width: 20px;
+    height: 20px;
+    stroke-width: 1.5;
+    flex-shrink: 0;
+    color: var(--accent);
   }
   .payments {
-    gap: 20px;
+    gap: 8px;
+    margin: 24px 0 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .payments b,
+  .payments span {
+    font: 600 11px monospace;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
   }
   .manifesto {
     padding: 62px 6%;
@@ -1235,21 +1286,21 @@ footer {
     font-size: 8px;
   }
   .sticky-buy {
-    padding: 12px 5%;
-    gap: 15px;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    gap: 8px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .sticky-buy > div {
+    display: none;
   }
   .sticky-buy > .buy {
-    width: 65%;
-    padding: 15px;
-    font-size: 9px;
+    width: 100%;
+    padding: 16px;
+    min-height: 56px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
     max-width: none;
-  }
-  .sticky-buy b {
-    font-size: 9px;
-  }
-  .sticky-buy > div span {
-    font-size: 8px;
-    max-width: 100px;
   }
   .sheet {
     width: 100%;

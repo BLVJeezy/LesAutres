@@ -369,6 +369,18 @@ export default function Store() {
             <span>SCROLL TO EXPLORE ↓</span>
           </div>
         </section>
+        <div className="mobile-perspective-photos photo-strip">
+          {photos.map((photo, i) => (
+            <div className={`photo photo-${i}`} key={i}>
+              <Image
+                src={`https://images.unsplash.com/${photo.id}?auto=format&fit=crop&w=900&q=85`}
+                alt={photo.alt}
+                fill
+                sizes="(max-width: 700px) 80vw, 25vw"
+              />
+            </div>
+          ))}
+        </div>
         <section id="perspective" className="editorial">
           <div className="section-label">
             <span>THE WORLD IS OUR BACKDROP.</span>
@@ -461,9 +473,8 @@ export default function Store() {
               <span>· LIMITED EDITION</span>
             </div>
             <h2>
-              THE BADDIES
-              <br />
-              TEE
+              THE BADDIES<br />
+              {" "}TEE
             </h2>
             <div className="price-row">
               <span>{money(price)}</span>
