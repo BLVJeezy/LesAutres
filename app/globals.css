@@ -1,11 +1,17 @@
 @import "tailwindcss";
 :root {
   --bg: #101110;
-  --panel: #191a18;
+  --bg2: #191a18;
+  --surface: #1e211a;
+  --border: #34362f;
   --text: #efeee8;
-  --muted: #989a92;
-  --line: #34362f;
-  --pink: #d595a4;
+  --text-dim: #989a92;
+  --accent: #d595a4;
+  --accent-dim: rgba(213, 149, 164, 0.15);
+  --panel: var(--bg2);
+  --muted: var(--text-dim);
+  --line: var(--border);
+  --pink: var(--accent);
 }
 * {
   box-sizing: border-box;
@@ -1083,10 +1089,10 @@ footer {
     display: flex;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    gap: 12px;
-    padding: 26px 6% 30px;
+    gap: 8px;
+    padding: 24px 20px 32px;
     scrollbar-width: none;
-    background: linear-gradient(180deg, #101110, #14161200);
+    background: linear-gradient(180deg, var(--bg), transparent);
   }
   .mobile-perspective-photos::-webkit-scrollbar {
     display: none;
@@ -1172,45 +1178,48 @@ footer {
     min-height: 48px;
   }
   .trust {
-    font-size: 12px;
-    margin-top: 28px;
-    gap: 10px;
-    color: #d3d5c8;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 24px;
+    gap: 8px;
+    color: var(--text);
   }
   .trust span {
     gap: 8px;
     flex: 1;
     justify-content: center;
-    padding: 12px 6px;
-    border: 1px solid #2c3024;
-    background: linear-gradient(135deg, #1e211a, #16181300);
+    padding: 16px 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
     border-radius: 4px;
     text-align: center;
     line-height: 1.2;
   }
   .trust svg {
-    width: 18px;
-    height: 18px;
+    width: 20px;
+    height: 20px;
     stroke-width: 1.5;
     flex-shrink: 0;
+    color: var(--accent);
   }
   .payments {
     gap: 8px;
-    margin: 22px 0 14px;
+    margin: 24px 0 16px;
     flex-wrap: wrap;
     justify-content: center;
-    font-size: 10px;
   }
   .payments b,
   .payments span {
-    font: 600 10px monospace;
-    letter-spacing: 0.8px;
-    padding: 7px 11px;
-    border: 1px solid #2c3024;
-    border-radius: 4px;
-    background: #1a1c17;
-    color: #cfd2c3;
+    font: 600 11px monospace;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--text);
   }
   .manifesto {
     padding: 62px 6%;
@@ -1277,21 +1286,21 @@ footer {
     font-size: 8px;
   }
   .sticky-buy {
-    padding: 12px 5%;
-    gap: 15px;
+    padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    gap: 8px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+  .sticky-buy > div {
+    display: none;
   }
   .sticky-buy > .buy {
-    width: 65%;
-    padding: 15px;
-    font-size: 9px;
+    width: 100%;
+    padding: 16px;
+    min-height: 56px;
+    font-size: 11px;
+    letter-spacing: 0.12em;
     max-width: none;
-  }
-  .sticky-buy b {
-    font-size: 9px;
-  }
-  .sticky-buy > div span {
-    font-size: 8px;
-    max-width: 100px;
   }
   .sheet {
     width: 100%;
