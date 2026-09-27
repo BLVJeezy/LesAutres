@@ -1,13 +1,13 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
-import { listOrders, listProducts } from "@/lib/shop";
+import { adminProducts, listOrders } from "@/lib/shop";
 import { toggleShippedAction } from "../../actions";
 
 export default async function Orders() {
   await requireAdmin();
   const [orders, products] = await Promise.all([
     listOrders(),
-    listProducts({ includeInactive: true }),
+    adminProducts(),
   ]);
   const name = (id: string) => products.find((p) => p.id === id)?.name ?? id;
 

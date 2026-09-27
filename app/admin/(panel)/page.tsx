@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money, sizes, totalStock, VAT_RATE } from "@/lib/catalog";
-import { listOrders, listProducts } from "@/lib/shop";
+import { adminProducts, listOrders } from "@/lib/shop";
 
 const PERIODS = { "7": "7 dagen", "30": "30 dagen", "90": "90 dagen", all: "Alles" } as const;
 type Period = keyof typeof PERIODS;
@@ -18,7 +18,7 @@ export default async function Dashboard({
     period === "all" ? undefined : Math.floor(Date.now() / 1000) - Number(period) * 86400;
   const [orders, products] = await Promise.all([
     listOrders(since),
-    listProducts({ includeInactive: true }),
+    adminProducts(),
   ]);
 
   const sum = (f: (o: (typeof orders)[number]) => number) => orders.reduce((n, o) => n + f(o), 0);

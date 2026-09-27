@@ -1,5 +1,6 @@
 import Stripe from "stripe";
 import {
+  emptyStock,
   parseStock,
   previewProduct,
   sizes,
@@ -62,13 +63,49 @@ export async function listProducts(
 
 export async function getProduct(id: string): Promise<ShopProduct | null> {
   const s = stripe();
-  if (!s) return null;
+  if (!s) return id === previewProduct.id ? draftProduct : null;
   try {
     const p = await s.products.retrieve(id, { expand: ["default_price"] });
     return p.metadata.shop === SHOP_TAG ? toShopProduct(p) : null;
   } catch {
     return null;
   }
+}
+
+/** The first product, shown in admin before Stripe is connected: no cost or stock yet, offline. */
+export const draftProduct: ShopProduct = {
+  ...previewProduct,
+  cost: 0,
+  stock: emptyStock(),
+  active: false,
+};
+
+/** Creates the Baddies Tee in Stripe (offline, empty cost/stock) when the shop has no products yet. */
+export async function ensureSeedProduct() {
+  const s = stripe();
+  if (!s || (await listProducts({ includeInactive: true })).length) return;
+  await s.products.create(
+    {
+      name: draftProduct.name,
+      description: draftProduct.description,
+      images: [draftProduct.image],
+      active: false,
+      metadata: {
+        shop: SHOP_TAG,
+        cost: "0",
+        stock: JSON.stringify(draftProduct.stock),
+        order: "0",
+      },
+      default_price_data: { currency: "eur", unit_amount: draftProduct.price },
+    },
+    { idempotencyKey: "les-autres-seed-baddies-tee-v1" },
+  );
+}
+
+export async function adminProducts(): Promise<ShopProduct[]> {
+  if (!stripe()) return [draftProduct];
+  await ensureSeedProduct();
+  return listProducts({ includeInactive: true });
 }
 
 /** Strip server-only fields before sending products to the browser. */

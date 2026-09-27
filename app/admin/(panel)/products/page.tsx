@@ -1,16 +1,17 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money, totalStock, VAT_RATE } from "@/lib/catalog";
-import { listProducts, stripe } from "@/lib/shop";
+import { adminProducts, stripe } from "@/lib/shop";
 
 export default async function Products() {
   await requireAdmin();
-  const products = stripe() ? await listProducts({ includeInactive: true }) : [];
+  const connected = Boolean(stripe());
+  const products = await adminProducts();
   return (
     <>
       <div className="admin-head">
         <h1>Producten</h1>
-        {stripe() && (
+        {connected && (
           <Link className="admin-btn" href="/admin/products/new">+ Nieuw product</Link>
         )}
       </div>
@@ -28,16 +29,19 @@ export default async function Products() {
               <tr key={p.id} className={p.active ? "" : "muted"}>
                 <td><Link href={`/admin/products/${p.id}`}>{p.name}</Link></td>
                 <td>{money(p.price)}</td>
-                <td>{money(p.cost)}</td>
-                <td>{money(margin)}</td>
+                <td>{p.cost ? money(p.cost) : "—"}</td>
+                <td>{p.cost ? money(margin) : "—"}</td>
                 <td className={totalStock(p) <= 5 ? "low" : ""}>{totalStock(p)}</td>
-                <td>{p.active ? "Online" : "Offline"}</td>
+                <td>
+                  {!connected
+                    ? "Concept — wacht op Stripe"
+                    : p.active
+                      ? "Online"
+                      : "Offline — vul kostprijs en voorraad in"}
+                </td>
               </tr>
             );
           })}
-          {!products.length && (
-            <tr><td colSpan={6}>Nog geen producten. Maak je eerste product aan.</td></tr>
-          )}
         </tbody>
       </table>
       <p className="admin-note">
