@@ -91,7 +91,9 @@ export function customerEmail(order: Order, number: string, lines: MailLine[]) {
         ${esc(order.name)}<br>${esc(order.address)}
       </td></tr>
       <tr><td style="padding-top:28px;font:13px/1.55 Arial,Helvetica,sans-serif;color:#989a92">
-        Vragen over je bestelling? Antwoord gewoon op deze e-mail.
+        Vragen over je bestelling? Antwoord gewoon op deze e-mail. Je hebt 14 dagen na ontvangst om zonder reden
+        te herroepen: <a href="${siteUrl()}/herroepen" style="color:#d595a4">herroep de overeenkomst hier</a>
+        (<a href="${siteUrl()}/retour" style="color:#d595a4">retourvoorwaarden</a>).
       </td></tr>
       <tr><td style="padding-top:24px">
         <a href="${siteUrl()}" style="display:inline-block;background:#e7e8dd;color:#14160f;padding:16px 22px;font:bold 11px monospace;letter-spacing:1px;text-decoration:none">TERUG NAAR LES AUTRES ↗</a>
@@ -106,6 +108,8 @@ export function customerEmail(order: Order, number: string, lines: MailLine[]) {
     `Totaal (incl. btw): ${money(order.total)}`,
     ``,
     `Verzenden naar: ${order.name}, ${order.address}`,
+    ``,
+    `Herroepen binnen 14 dagen na ontvangst: ${siteUrl()}/herroepen`,
   ].join("\n");
   return { subject: `Bedankt voor je bestelling ${number} — Les Autres`, html, text };
 }

@@ -35,6 +35,7 @@ import {
   type CartItem,
   type ShopProduct,
 } from "@/lib/catalog";
+import { company } from "@/lib/company";
 import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
 import { ShotCarousel } from "./shot-carousel";
@@ -187,16 +188,9 @@ const COUNTRIES: [string, string][] = [
   ["DE", "Duitsland"],
   ["ES", "Spanje"],
 ];
-const CUSTOMER_KEY = "la-customer";
 
 function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Customer) => void }) {
-  const [c, setC] = useState<Customer>(() => {
-    try {
-      return { ...EMPTY_CUSTOMER, ...JSON.parse(localStorage.getItem(CUSTOMER_KEY) ?? "{}") };
-    } catch {
-      return EMPTY_CUSTOMER;
-    }
-  });
+  const [c, setC] = useState<Customer>(EMPTY_CUSTOMER);
   const field = (key: keyof Customer, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="checkout-field">
       <span>{label}</span>
@@ -213,9 +207,6 @@ function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Custome
       className="checkout-form"
       onSubmit={(e) => {
         e.preventDefault();
-        try {
-          localStorage.setItem(CUSTOMER_KEY, JSON.stringify(c));
-        } catch {}
         onSubmit(c);
       }}
     >
@@ -236,10 +227,19 @@ function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Custome
           ))}
         </select>
       </label>
+      <p className="tiny checkout-legal">
+        Verzending {company.shippingCost} · verzonden {company.dispatchTime} · 14 dagen herroepingsrecht ·
+        2 jaar wettelijke garantie.
+      </p>
       <button className="buy" disabled={busy}>
         {busy ? "EVEN GEDULD…" : "BETAAL MET REVOLUT"}
         <ArrowUpRight size={20} />
       </button>
+      <p className="tiny checkout-legal">
+        Met &ldquo;Betaal met Revolut&rdquo; plaats je een bestelling met betalingsverplichting en ga je akkoord met
+        onze <Link href="/voorwaarden">algemene voorwaarden</Link>. Lees ook onze{" "}
+        <Link href="/privacy">privacyverklaring</Link> en <Link href="/retour">retourvoorwaarden</Link>.
+      </p>
     </form>
   );
 }
@@ -795,13 +795,22 @@ export default function Store({
             <Link href="/privacy">Privacy</Link>
             <Link href="/retour">Retour</Link>
             <Link href="/verzending">Verzending</Link>
-            <button onClick={() => setConsent(null)}>Cookies</button>
+            <Link href="/cookies">Cookies</Link>
+            <Link href="/herroepen">Herroep de overeenkomst hier</Link>
+            <button onClick={() => setConsent(null)}>Cookie-instellingen</button>
           </div>
           <span>BELGIUM, WORLDWIDE.</span>
         </div>
         <p className="business-note">
-          Preview — handelsnaam, adres, contact en ondernemingsnummer worden
-          vóór de lancering ingevuld.
+          {[
+            company.legalName && `${company.legalName}${company.legalForm ? ` ${company.legalForm}` : ""}`,
+            company.address,
+            company.enterpriseNumber && `KBO ${company.enterpriseNumber}`,
+            company.vatNumber && company.vatNumber !== company.enterpriseNumber && `btw ${company.vatNumber}`,
+            company.email,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "Les Autres · België"}
         </p>
         <a
           className="created-by"
@@ -833,7 +842,7 @@ export default function Store({
             Alleen de essentials?
             <span>
               We bewaren je winkelmand. Analytics alleen als jij dat goed vindt.{" "}
-              <Link href="/privacy">Meer info</Link>
+              <Link href="/cookies">Meer info</Link>
             </span>
           </p>
           <div>
