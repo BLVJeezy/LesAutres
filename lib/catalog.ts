@@ -13,6 +13,7 @@ export type Colorway = (typeof colors)[number];
 
 export const VAT_RATE = 0.21;
 export const MAX_CART_LINES = 10;
+export const MAX_IMAGES = 8;
 
 export type ShopProduct = {
   id: string;
@@ -22,7 +23,9 @@ export type ShopProduct = {
   price: number;
   /** Purchase cost per unit in cents, excl. VAT. Server/admin only; 0 on the storefront. */
   cost: number;
+  /** Main image (first of `images`). */
   image: string;
+  images: string[];
   stock: Record<Size, number>;
   active: boolean;
   order: number;
@@ -101,6 +104,7 @@ export const previewProduct: ShopProduct = {
   price: 6500,
   cost: 0,
   image: "/images/drop-001-product.jpeg",
+  images: ["/images/drop-001-product.jpeg"],
   stock: { XS: 0, S: 8, M: 3, L: 8, XL: 8, XXL: 0 },
   active: true,
   order: 0,

@@ -26,7 +26,7 @@ export default async function EditProduct({
           automatisch klaar; vul dan kostprijs en voorraad in en zet het online.
         </p>
       )}
-      <ProductForm product={product} />
+      <ProductForm product={product} canUpload={Boolean(process.env.BLOB_READ_WRITE_TOKEN)} />
     </>
   );
 }

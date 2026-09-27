@@ -1,16 +1,31 @@
 "use client";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { money, sizes, VAT_RATE, type ShopProduct } from "@/lib/catalog";
 import { saveProductAction, type FormState } from "../../actions";
+import { ImageManager } from "./image-manager";
 
 const toEuro = (cents: number) => (cents ? (cents / 100).toFixed(2).replace(".", ",") : "");
 const parse = (v: string) => Math.round(Number(v.replace(",", ".")) * 100) || 0;
 
-export function ProductForm({ product }: { product: ShopProduct }) {
+export function ProductForm({
+  product,
+  canUpload,
+  onSaved,
+  onCancel,
+}: {
+  product: ShopProduct;
+  canUpload: boolean;
+  onSaved?: (state: FormState) => void;
+  onCancel?: () => void;
+}) {
   const [state, action, pending] = useActionState<FormState, FormData>(saveProductAction, {});
   const [price, setPrice] = useState(toEuro(product.price));
   const [cost, setCost] = useState(toEuro(product.cost));
   const margin = Math.round(parse(price) / (1 + VAT_RATE)) - parse(cost);
+
+  useEffect(() => {
+    if (state.savedId) onSaved?.(state);
+  }, [state, onSaved]);
 
   return (
     <form action={action} className="admin-form wide">
@@ -34,13 +49,10 @@ export function ProductForm({ product }: { product: ShopProduct }) {
         </label>
         <div className="admin-margin">
           <span>Marge per stuk</span>
-          <b>{money(margin)}</b>
+          <b>{parse(cost) ? money(margin) : "—"}</b>
         </div>
       </div>
-      <label>
-        Afbeelding (pad zoals /images/… of https-link)
-        <input name="image" defaultValue={product.image} placeholder="/images/drop-001-product.jpeg" />
-      </label>
+      <ImageManager initial={product.images} canUpload={canUpload} />
       <fieldset>
         <legend>Voorraad per maat</legend>
         <div className="admin-stock">
@@ -62,11 +74,18 @@ export function ProductForm({ product }: { product: ShopProduct }) {
           Online in de shop
         </label>
       </div>
-      <button className="admin-btn" disabled={pending}>
-        {pending ? "Opslaan…" : product.id ? "Opslaan" : "Product aanmaken"}
-      </button>
       {state.error && <p className="admin-alert">{state.error}</p>}
-      {state.ok && <p className="admin-ok">{state.ok}</p>}
+      {state.ok && !onSaved && <p className="admin-ok">{state.ok}</p>}
+      <div className="admin-actions">
+        {onCancel && (
+          <button type="button" className="admin-link" onClick={onCancel}>
+            Annuleren
+          </button>
+        )}
+        <button className="admin-btn" disabled={pending}>
+          {pending ? "Opslaan…" : product.id ? "Opslaan" : "Product aanmaken"}
+        </button>
+      </div>
     </form>
   );
 }

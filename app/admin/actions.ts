@@ -2,10 +2,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAdmin, login, logout } from "@/lib/admin-auth";
-import { emptyStock, sizes } from "@/lib/catalog";
+import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
+
+const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
 import { createProduct, stripe, updateProduct, type ProductInput } from "@/lib/shop";
 
-export type FormState = { error?: string; ok?: string };
+export type FormState = { error?: string; ok?: string; savedId?: string };
 
 async function guard() {
   if (!(await isAdmin())) redirect("/admin/login");
@@ -39,9 +41,18 @@ function parseProduct(form: FormData): ProductInput | string {
   if (price === null || price < 50) return "Verkoopprijs is ongeldig (minimaal € 0,50).";
   const cost = euros(form.get("cost"));
   if (cost === null) return "Kostprijs is ongeldig.";
-  const image = String(form.get("image") ?? "").trim();
-  if (image && !/^(\/[\w\-./]+|https:\/\/\S+)$/.test(image))
-    return "Afbeelding moet een pad (/images/…) of https-link zijn.";
+  let images: unknown;
+  try {
+    images = JSON.parse(String(form.get("images") || "[]"));
+  } catch {
+    return "Afbeeldingen zijn ongeldig.";
+  }
+  if (
+    !Array.isArray(images) ||
+    images.length > MAX_IMAGES ||
+    !images.every((u) => typeof u === "string" && IMAGE_URL.test(u))
+  )
+    return `Afbeeldingen moeten een pad (/images/…) of https-link zijn, max. ${MAX_IMAGES}.`;
   const stock = emptyStock();
   for (const s of sizes) {
     const n = Number(form.get(`stock_${s}`) || 0);
@@ -54,7 +65,7 @@ function parseProduct(form: FormData): ProductInput | string {
     description,
     price,
     cost,
-    image,
+    images: images as string[],
     stock,
     active: form.get("active") === "on",
     order: Number.isInteger(order) ? order : 0,
@@ -66,18 +77,17 @@ export async function saveProductAction(_: FormState, form: FormData): Promise<F
   const input = parseProduct(form);
   if (typeof input === "string") return { error: input };
   const id = String(form.get("id") ?? "");
-  let createdId = "";
+  let savedId = id;
   try {
     if (id) await updateProduct(id, input);
-    else createdId = await createProduct(input);
+    else savedId = await createProduct(input);
   } catch (error) {
     console.error("Saving product failed", error);
     return { error: "Opslaan mislukt. Controleer de Stripe-configuratie en probeer opnieuw." };
   }
   revalidatePath("/");
   revalidatePath("/admin", "layout");
-  if (createdId) redirect(`/admin/products/${createdId}?saved=1`);
-  return { ok: "Opgeslagen." };
+  return { ok: id ? "Opgeslagen." : "Product aangemaakt.", savedId };
 }
 
 export async function toggleShippedAction(form: FormData) {
