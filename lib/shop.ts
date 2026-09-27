@@ -48,14 +48,28 @@ function toShopProduct(id: string, d: ProductDoc): ShopProduct {
   };
 }
 
+/** One-time swap of the Baddies Tee's old lifestyle photos for the front/back product shots. */
+const OLD_SEED_IMAGES = ["/images/baddies-duo.jpg", "/images/baddies-her.jpg", "/images/baddies-him.jpg"];
+async function migrateSeedImages(docs: FirebaseFirestore.QueryDocumentSnapshot[]) {
+  const doc = docs.find((d) => d.id === SEED_ID);
+  const images = (doc?.data() as ProductDoc | undefined)?.images;
+  if (!doc || JSON.stringify(images) !== JSON.stringify(OLD_SEED_IMAGES)) return false;
+  await doc.ref.update({ images: previewProduct.images, updatedAt: Date.now() }).catch(() => {});
+  return true;
+}
+
 export async function listProducts(
   opts: { includeInactive?: boolean } = {},
 ): Promise<ShopProduct[]> {
   const db = firestore();
   if (!db) return [previewProduct];
   const snap = await db.collection(PRODUCTS).get();
+  const migrated = await migrateSeedImages(snap.docs);
   return snap.docs
-    .map((doc) => toShopProduct(doc.id, doc.data() as ProductDoc))
+    .map((doc) => {
+      const data = doc.data() as ProductDoc;
+      return toShopProduct(doc.id, migrated && doc.id === SEED_ID ? { ...data, images: previewProduct.images } : data);
+    })
     .filter((p) => opts.includeInactive || p.active)
     .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 }

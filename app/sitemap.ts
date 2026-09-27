@@ -20,6 +20,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     lastModified,
     changeFrequency,
     priority,
-    ...(path === "" && { images: [`${url}/images/baddies-duo.jpg`, `${url}/images/baddies-her.jpg`, `${url}/images/baddies-him.jpg`] }),
+    ...(path === "" && { images: [`${url}/images/baddies-tee-front.jpg`, `${url}/images/baddies-tee-back.jpg`] }),
   }));
 }

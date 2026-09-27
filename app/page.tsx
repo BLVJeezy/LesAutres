@@ -43,7 +43,7 @@ export default async function Home() {
               description: p.description,
               brand: { "@type": "Brand", name: "Les Autres" },
               sku: p.id,
-              image: (p.images.length ? p.images : [p.image || "/images/baddies-duo.jpg"]).map((i) =>
+              image: (p.images.length ? p.images : [p.image || "/images/baddies-tee-front.jpg"]).map((i) =>
                 i.startsWith("/") ? `${site}${i}` : i,
               ),
               offers: {
