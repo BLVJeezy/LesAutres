@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
+import { firebaseConfigured } from "@/lib/firebase";
 import { listOrders, stripe } from "@/lib/shop";
 import { logoutAction } from "../actions";
 import { NavLinks } from "./nav-links";
@@ -36,10 +37,16 @@ export default async function Panel({ children }: { children: ReactNode }) {
           </form>
         </header>
         <main className="admin-main">
+          {!firebaseConfigured() && (
+            <p className="admin-banner">
+              Firebase is nog niet gekoppeld. Zet <code>FIREBASE_SERVICE_ACCOUNT</code> in
+              Vercel om producten en foto&apos;s op te slaan.
+            </p>
+          )}
           {!stripe() && (
             <p className="admin-banner">
               Stripe is nog niet gekoppeld. Zet <code>STRIPE_SECRET_KEY</code> in
-              Vercel om producten op te slaan en bestellingen te ontvangen.
+              Vercel om betalingen en bestellingen te ontvangen.
             </p>
           )}
           {stripe() && !process.env.STRIPE_WEBHOOK_SECRET && (

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import Stripe from "stripe";
+import { firestore } from "./firebase";
 import {
   emptyStock,
   MAX_IMAGES,
@@ -32,70 +33,58 @@ export function stripe(): Stripe | null {
   return client;
 }
 
-/** Images live in metadata (img_0…img_7) so relative paths work; Stripe's own list only takes https. */
-function imagesOf(p: Stripe.Product): string[] {
-  const fromMeta = Array.from({ length: MAX_IMAGES }, (_, i) => p.metadata[`img_${i}`]).filter(
-    (u): u is string => Boolean(u),
-  );
-  return fromMeta.length ? fromMeta : p.images;
-}
+const PRODUCTS = "products";
+const SEED_ID = "baddies-tee";
 
-/** On update, empty values delete the unused slots; on create they are left out. */
-function imageMetadata(images: string[], forCreate = false) {
-  return Object.fromEntries(
-    Array.from({ length: MAX_IMAGES }, (_, i) => [`img_${i}`, images[i] ?? ""]).filter(
-      ([, v]) => !forCreate || v,
-    ),
-  );
-}
+type ProductDoc = {
+  name: string;
+  description: string;
+  price: number;
+  cost: number;
+  images: string[];
+  stock: Record<string, number>;
+  active: boolean;
+  order: number;
+  updatedAt?: number;
+};
 
-const stripeImages = (images: string[]) =>
-  images.filter((u) => u.startsWith("https://")).slice(0, MAX_IMAGES);
-
-function toShopProduct(p: Stripe.Product): ShopProduct {
-  const price = p.default_price as Stripe.Price | null;
+function toShopProduct(id: string, d: ProductDoc): ShopProduct {
+  const images = Array.isArray(d.images) ? d.images.filter((u) => typeof u === "string").slice(0, MAX_IMAGES) : [];
   return {
-    id: p.id,
-    name: p.name,
-    description: p.description ?? "",
-    price: price?.unit_amount ?? 0,
-    cost: Math.max(0, Number(p.metadata.cost) || 0),
-    image: imagesOf(p)[0] ?? "",
-    images: imagesOf(p),
-    stock: parseStock(p.metadata.stock),
-    active: p.active,
-    order: Number(p.metadata.order) || 0,
+    id,
+    name: d.name ?? "",
+    description: d.description ?? "",
+    price: Math.max(0, Math.round(Number(d.price) || 0)),
+    cost: Math.max(0, Math.round(Number(d.cost) || 0)),
+    image: images[0] ?? "",
+    images,
+    stock: parseStock(JSON.stringify(d.stock ?? {})),
+    active: Boolean(d.active),
+    order: Number(d.order) || 0,
   };
 }
 
 export async function listProducts(
   opts: { includeInactive?: boolean } = {},
 ): Promise<ShopProduct[]> {
-  const s = stripe();
-  if (!s) return [previewProduct];
-  const found: ShopProduct[] = [];
-  for await (const p of s.products.list({
-    limit: 100,
-    expand: ["data.default_price"],
-    ...(opts.includeInactive ? {} : { active: true }),
-  })) {
-    if (p.metadata.shop === SHOP_TAG) found.push(toShopProduct(p));
-  }
-  return found.sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
+  const db = firestore();
+  if (!db) return [previewProduct];
+  const snap = await db.collection(PRODUCTS).get();
+  return snap.docs
+    .map((doc) => toShopProduct(doc.id, doc.data() as ProductDoc))
+    .filter((p) => opts.includeInactive || p.active)
+    .sort((a, b) => a.order - b.order || a.name.localeCompare(b.name));
 }
 
 export async function getProduct(id: string): Promise<ShopProduct | null> {
-  const s = stripe();
-  if (!s) return id === previewProduct.id ? draftProduct : null;
-  try {
-    const p = await s.products.retrieve(id, { expand: ["default_price"] });
-    return p.metadata.shop === SHOP_TAG ? toShopProduct(p) : null;
-  } catch {
-    return null;
-  }
+  const db = firestore();
+  if (!db) return id === previewProduct.id ? draftProduct : null;
+  if (!/^[\w-]{1,100}$/.test(id)) return null;
+  const doc = await db.collection(PRODUCTS).doc(id).get();
+  return doc.exists ? toShopProduct(doc.id, doc.data() as ProductDoc) : null;
 }
 
-/** The first product, shown in admin before Stripe is connected: no cost or stock yet, offline. */
+/** The first product before anything is saved: no cost or stock yet, offline. */
 export const draftProduct: ShopProduct = {
   ...previewProduct,
   cost: 0,
@@ -103,31 +92,31 @@ export const draftProduct: ShopProduct = {
   active: false,
 };
 
-/** Creates the Baddies Tee in Stripe (offline, empty cost/stock) when the shop has no products yet. */
+/** Creates the Baddies Tee (offline, empty cost/stock) the first time the shop has no products. */
 export async function ensureSeedProduct() {
-  const s = stripe();
-  if (!s || (await listProducts({ includeInactive: true })).length) return;
-  await s.products.create(
-    {
+  const db = firestore();
+  if (!db) return;
+  const any = await db.collection(PRODUCTS).limit(1).get();
+  if (!any.empty) return;
+  await db
+    .collection(PRODUCTS)
+    .doc(SEED_ID)
+    .create({
       name: draftProduct.name,
       description: draftProduct.description,
-      images: stripeImages(draftProduct.images),
+      price: draftProduct.price,
+      cost: 0,
+      images: draftProduct.images,
+      stock: draftProduct.stock,
       active: false,
-      metadata: {
-        shop: SHOP_TAG,
-        cost: "0",
-        stock: JSON.stringify(draftProduct.stock),
-        order: "0",
-        ...imageMetadata(draftProduct.images, true),
-      },
-      default_price_data: { currency: "eur", unit_amount: draftProduct.price },
-    },
-    { idempotencyKey: "les-autres-seed-baddies-tee-v1" },
-  );
+      order: 0,
+      updatedAt: Date.now(),
+    } satisfies ProductDoc)
+    .catch(() => {});
 }
 
 export async function adminProducts(): Promise<ShopProduct[]> {
-  if (!stripe()) return [draftProduct];
+  if (!firestore()) return [draftProduct];
   await ensureSeedProduct();
   return listProducts({ includeInactive: true });
 }
@@ -146,54 +135,21 @@ export type ProductInput = {
   order: number;
 };
 
-function metadataFor(input: ProductInput, forCreate = false) {
-  return {
-    shop: SHOP_TAG,
-    cost: String(input.cost),
-    stock: JSON.stringify(input.stock),
-    order: String(input.order),
-    ...imageMetadata(input.images, forCreate),
-  };
-}
+const docFor = (input: ProductInput): ProductDoc => ({ ...input, updatedAt: Date.now() });
 
 export async function createProduct(input: ProductInput): Promise<string> {
-  const s = stripe();
-  if (!s) throw new Error("Stripe is niet geconfigureerd.");
-  const product = await s.products.create({
-    name: input.name,
-    description: input.description || undefined,
-    images: stripeImages(input.images),
-    active: input.active,
-    metadata: metadataFor(input, true),
-    default_price_data: { currency: "eur", unit_amount: input.price },
-  });
-  return product.id;
+  const db = firestore();
+  if (!db) throw new Error("Firebase is niet geconfigureerd.");
+  const ref = await db.collection(PRODUCTS).add(docFor(input));
+  return ref.id;
 }
 
 export async function updateProduct(id: string, input: ProductInput) {
-  const s = stripe();
-  if (!s) throw new Error("Stripe is niet geconfigureerd.");
-  const current = await s.products.retrieve(id, { expand: ["default_price"] });
-  if (current.metadata.shop !== SHOP_TAG) throw new Error("Onbekend product.");
-  const oldPrice = current.default_price as Stripe.Price | null;
-  let defaultPrice: string | undefined;
-  if (!oldPrice || oldPrice.unit_amount !== input.price) {
-    const price = await s.prices.create({
-      product: id,
-      currency: "eur",
-      unit_amount: input.price,
-    });
-    defaultPrice = price.id;
-  }
-  await s.products.update(id, {
-    name: input.name,
-    description: input.description || "",
-    images: stripeImages(input.images),
-    active: input.active,
-    metadata: metadataFor(input),
-    ...(defaultPrice ? { default_price: defaultPrice } : {}),
-  });
-  if (defaultPrice && oldPrice) await s.prices.update(oldPrice.id, { active: false });
+  const db = firestore();
+  if (!db) throw new Error("Firebase is niet geconfigureerd.");
+  const ref = db.collection(PRODUCTS).doc(id);
+  if (!(await ref.get()).exists) throw new Error("Onbekend product.");
+  await ref.set(docFor(input));
 }
 
 /** Line snapshot stored on the Checkout Session: [productId, size, qty, unitPrice, unitCost]. */
@@ -226,16 +182,20 @@ export function decodeLines(raw: string | undefined): OrderLine[] {
 }
 
 export async function adjustStock(lines: OrderLine[], direction: -1 | 1) {
-  const s = stripe();
-  if (!s) return;
+  const db = firestore();
+  if (!db) return;
   const byProduct = new Map<string, OrderLine[]>();
   for (const l of lines) byProduct.set(l[0], [...(byProduct.get(l[0]) ?? []), l]);
   for (const [id, productLines] of byProduct) {
-    const p = await s.products.retrieve(id);
-    const stock = parseStock(p.metadata.stock);
-    for (const [, size, qty] of productLines)
-      stock[size] = Math.max(0, stock[size] + direction * qty);
-    await s.products.update(id, { metadata: { stock: JSON.stringify(stock) } });
+    const ref = db.collection(PRODUCTS).doc(id);
+    await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) return;
+      const stock = parseStock(JSON.stringify((doc.data() as ProductDoc).stock ?? {}));
+      for (const [, size, qty] of productLines)
+        stock[size] = Math.max(0, stock[size] + direction * qty);
+      tx.update(ref, { stock, updatedAt: Date.now() });
+    });
   }
 }
 

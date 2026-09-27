@@ -186,7 +186,7 @@ export function ProductManager({
               </button>
             </div>
             <div className="admin-dialog-content">
-              {!connected && <p className="admin-alert">Opslaan kan zodra Stripe gekoppeld is.</p>}
+              {!connected && <p className="admin-alert">Opslaan kan zodra Firebase gekoppeld is.</p>}
               <ProductForm
                 key={editing.id || "new"}
                 product={editing}
