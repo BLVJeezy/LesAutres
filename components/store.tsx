@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import Image, { getImageProps } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Component,
@@ -29,12 +29,11 @@ import {
 import {
   colors,
   sizes,
-  price,
   money,
-  availability,
   addItem,
   type Size,
   type CartItem,
+  type ShopProduct,
 } from "@/lib/catalog";
 import { onSubscribe, onCheckout, trackEvent } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
@@ -163,15 +162,6 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
     </form>
   );
 }
-const heroCommon = { alt: "", fill: true, priority: true, sizes: "100vw" };
-const {
-  props: { srcSet: heroDesktopSrcSet },
-} = getImageProps({ ...heroCommon, src: "/images/hero-sunset-wide.jpg" });
-const heroDesktop = { srcSet: heroDesktopSrcSet };
-const { props: heroMobile } = getImageProps({
-  ...heroCommon,
-  src: "/images/hero-sunset.jpg",
-});
 const photos = [
   {
     src: "/images/perspective-street.jpg",
@@ -186,7 +176,62 @@ const photos = [
     alt: "Close-up van de BADDIES IN BELGICA print",
   },
 ];
-export default function Store() {
+function ProductImage({ src, alt, className, sizes: sizesAttr }: { src: string; alt: string; className?: string; sizes: string }) {
+  return src.startsWith("/") ? (
+    <Image className={className} src={src} alt={alt} fill sizes={sizesAttr} />
+  ) : (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img className={className} src={src} alt={alt} loading="lazy" />
+  );
+}
+function MoreProduct({
+  product,
+  onAdd,
+}: {
+  product: ShopProduct;
+  onAdd: (size: Size) => void;
+}) {
+  const [size, setSize] = useState<Size>();
+  return (
+    <article className="more-card">
+      <div className="more-image">
+        {product.image && (
+          <ProductImage src={product.image} alt={product.name} sizes="(max-width: 700px) 90vw, 30vw" />
+        )}
+      </div>
+      <div className="more-info">
+        <h3>{product.name}</h3>
+        <span>{money(product.price)}</span>
+      </div>
+      <div className="sizes">
+        {sizes.map((s) => (
+          <button
+            key={s}
+            aria-pressed={s === size}
+            disabled={product.stock[s] <= 0}
+            className={`${s === size ? "selected" : ""} ${product.stock[s] <= 0 ? "soldout" : ""}`}
+            onClick={() => setSize(s)}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      <button className="buy" disabled={!size} onClick={() => size && onAdd(size)}>
+        <span>{size ? "IN WINKELMAND" : "KIES JE MAAT"}</span>
+        <ArrowUpRight size={20} />
+      </button>
+    </article>
+  );
+}
+export default function Store({
+  products,
+  live,
+}: {
+  products: ShopProduct[];
+  live: boolean;
+}) {
+  const featured = products[0];
+  const price = featured.price;
   const [shirtReady, setShirtReady] = useState(false);
   const color = colors[0];
   const [productView, setProductView] = useState<"photo" | "360">("photo");
@@ -208,7 +253,9 @@ export default function Store() {
   const viewer = useRef<HTMLDivElement>(null);
   const productVisible = useInView(viewer, { margin: "250px", once: true });
   const productOnscreen = useInView(viewer);
-  const stock = size ? availability(color.id, size) : null;
+  const stock = size ? featured.stock[size] : null;
+  const soldOut = (s: Size) => featured.stock[s] <= 0;
+  const productOf = (id: string) => products.find((p) => p.id === id);
   useEffect(() => {
     setConsent(localStorage.getItem("la-consent"));
     try {
@@ -218,12 +265,15 @@ export default function Store() {
           raw
             .filter(
               (i: CartItem) =>
-                colors.some((c) => c.id === i.color) &&
+                typeof i?.productId === "string" &&
                 sizes.includes(i.size) &&
                 Number.isInteger(i.quantity) &&
                 i.quantity > 0,
             )
-            .reduce((acc: CartItem[], i: CartItem) => addItem(acc, i), []),
+            .reduce(
+              (acc: CartItem[], i: CartItem) => addItem(acc, i, products),
+              [],
+            ),
         );
     } catch {}
     setLoaded(true);
@@ -246,18 +296,23 @@ export default function Store() {
     return () => observer.disconnect();
   }, []);
   const count = cart.reduce((n, i) => n + i.quantity, 0);
-  const total = count * price;
-  function add() {
-    if (!size) return;
+  const total = cart.reduce(
+    (n, i) => n + i.quantity * (productOf(i.productId)?.price ?? 0),
+    0,
+  );
+  function addProduct(productId: string, s: Size) {
     setCart((previous) =>
-      addItem(previous, { color: color.id, size, quantity: 1 }),
+      addItem(previous, { productId, size: s, quantity: 1 }, products),
     );
-    trackEvent("add_to_cart", { color: color.id, size });
+    trackEvent("add_to_cart", { productId, size: s });
     setError("");
     setSheet("cart");
   }
+  function add() {
+    if (size) addProduct(featured.id, size);
+  }
   function chooseSize(s: Size) {
-    if (availability(color.id, s).kind === "soldout") {
+    if (soldOut(s)) {
       setWaitSize(s);
       setSheet("waitlist");
       return;
@@ -273,11 +328,7 @@ export default function Store() {
       onClick={add}
     >
       <span>
-        {!size
-          ? "KIES JE MAAT"
-          : stock?.kind === "preorder"
-            ? "PRE-ORDER"
-            : "IN WINKELMAND"}
+        {!size ? "KIES JE MAAT" : "IN WINKELMAND"}
         {size ? ` — ${money(price)}` : ""}
       </span>
       <ArrowUpRight size={22} />
@@ -323,14 +374,13 @@ export default function Store() {
             </span>
           </div>
           <div className="hero-backdrop" aria-hidden>
-            <picture>
-              <source
-                media="(min-width: 701px)"
-                srcSet={heroDesktop.srcSet}
-                sizes="100vw"
-              />
-              <img {...heroMobile} alt="" />
-            </picture>
+            <Image
+              src="/images/hero-rooftop-dusk.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+            />
           </div>
           <div className="hero-title">
             <h1 className="sr-only">Les Autres</h1>
@@ -412,6 +462,14 @@ export default function Store() {
                     />
                   </SceneBoundary>
                 </>
+              ) : featured.image &&
+                featured.image !== "/images/drop-001-product.jpeg" ? (
+                <ProductImage
+                  className="official-product-photo custom"
+                  src={featured.image}
+                  alt={featured.name}
+                  sizes="(max-width: 700px) 100vw, 50vw"
+                />
               ) : (
                 <Image
                   className="official-product-photo"
@@ -449,20 +507,17 @@ export default function Store() {
               <span className="pink-dot" /> DROP 001{" "}
               <span>· LIMITED EDITION</span>
             </div>
-            <h2>
-              THE BADDIES<br />
-              {" "}TEE
-            </h2>
+            <h2>{featured.name.toUpperCase()}</h2>
             <div className="price-row">
               <span>{money(price)}</span>
               <span>BOX FIT. BIG ENERGY.</span>
             </div>
-            <p className="description">
-              Geen grenzen. Geen uitleg nodig.
-              <br />
-              Eén statement, vier landen. Voor de anderen.
-            </p>
-            <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
+            {featured.description && (
+              <p className="description">{featured.description}</p>
+            )}
+            {!live && (
+              <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
+            )}
             <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
             <div className="selector-head">
               <span>01 — MAAT</span>
@@ -475,12 +530,8 @@ export default function Store() {
                 <button
                   key={s}
                   aria-pressed={s === size}
-                  aria-label={
-                    availability(color.id, s).kind === "soldout"
-                      ? `${s}, uitverkocht, meld me aan`
-                      : s
-                  }
-                  className={`${s === size ? "selected" : ""} ${availability(color.id, s).kind === "soldout" ? "soldout" : ""}`}
+                  aria-label={soldOut(s) ? `${s}, uitverkocht, meld me aan` : s}
+                  className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
                   onClick={() => chooseSize(s)}
                 >
                   {s}
@@ -488,12 +539,10 @@ export default function Store() {
               ))}
             </div>
             <div className="stock-line" aria-live="polite">
-              {stock?.kind === "preorder" ? (
-                <>Pre-order · {stock.shipping}</>
-              ) : stock && stock.quantity <= 3 ? (
+              {stock !== null && stock <= 3 ? (
                 <>
-                  <span className="pink-dot" /> Nog {stock.quantity} in deze
-                  maat · voorbeeldvoorraad
+                  <span className="pink-dot" /> Nog {stock} in deze maat
+                  {!live && " · voorbeeldvoorraad"}
                 </>
               ) : (
                 <>Oversized fit. Neem je eigen maat voor de boxy look.</>
@@ -520,10 +569,12 @@ export default function Store() {
               <b>VISA</b>
               <span>mastercard</span>
             </div>
-            <p className="tiny delivery">
-              Levertijd wordt bevestigd bij lancering. Betalen is nog niet
-              actief.
-            </p>
+            {!live && (
+              <p className="tiny delivery">
+                Levertijd wordt bevestigd bij lancering. Betalen is nog niet
+                actief.
+              </p>
+            )}
             <div className="accordions">
               {[
                 {
@@ -550,6 +601,23 @@ export default function Store() {
             </div>
           </div>
         </section>
+        {products.length > 1 && (
+          <section className="more-products" id="more">
+            <div className="section-label">
+              <span>MORE FROM LES AUTRES.</span>
+              <span>DROP 001</span>
+            </div>
+            <div className="more-grid">
+              {products.slice(1).map((p) => (
+                <MoreProduct
+                  key={p.id}
+                  product={p}
+                  onAdd={(s) => addProduct(p.id, s)}
+                />
+              ))}
+            </div>
+          </section>
+        )}
         <section className="manifesto">
           <span className="micro">IT WAS NEVER JUST A T-SHIRT.</span>
           <h2>
@@ -627,11 +695,8 @@ export default function Store() {
       {sticky && !sheet && (
         <div className="sticky-buy">
           <div>
-            <b>THE BADDIES TEE</b>
-            <span>
-              {color.name}
-              {size ? ` / ${size}` : ""}
-            </span>
+            <b>{featured.name.toUpperCase()}</b>
+            <span>{size ? `Maat ${size}` : money(price)}</span>
           </div>
           {size ? (
             cta
@@ -713,27 +778,24 @@ export default function Store() {
             <>
               <div className="cart-list">
                 {cart.map((item, i) => {
-                  const c = colors.find((c) => c.id === item.color)!;
-                  const status = availability(item.color, item.size);
+                  const p = productOf(item.productId);
+                  if (!p) return null;
                   return (
                     <div
                       className="cart-item"
-                      key={`${item.color}-${item.size}`}
+                      key={`${item.productId}-${item.size}`}
                     >
                       <div className="cart-thumb">
-                        <ShirtFallback color={c} />
+                        {p.image ? (
+                          <ProductImage src={p.image} alt="" sizes="80px" />
+                        ) : (
+                          <ShirtFallback color={color} />
+                        )}
                       </div>
                       <div>
-                        <b>THE BADDIES TEE</b>
-                        <p>
-                          {c.name} / {item.size}
-                        </p>
-                        <strong>{money(price * item.quantity)}</strong>
-                        {status.kind === "preorder" && (
-                          <p className="preorder-note">
-                            PRE-ORDER — {status.shipping}
-                          </p>
-                        )}
+                        <b>{p.name.toUpperCase()}</b>
+                        <p>Maat {item.size}</p>
+                        <strong>{money(p.price * item.quantity)}</strong>
                         <div className="quantity">
                           <button
                             aria-label={`Verminder ${item.size}`}
@@ -753,10 +815,12 @@ export default function Store() {
                           </button>
                           <span>{item.quantity}</span>
                           <button
-                            disabled={item.quantity >= status.quantity}
+                            disabled={item.quantity >= p.stock[item.size]}
                             aria-label={`Verhoog ${item.size}`}
                             onClick={() =>
-                              setCart(addItem(cart, { ...item, quantity: 1 }))
+                              setCart(
+                                addItem(cart, { ...item, quantity: 1 }, products),
+                              )
                             }
                           >
                             <Plus size={14} />
@@ -764,7 +828,7 @@ export default function Store() {
                         </div>
                       </div>
                       <button
-                        aria-label={`Verwijder ${c.name}, ${item.size}`}
+                        aria-label={`Verwijder ${p.name}, ${item.size}`}
                         onClick={() => setCart(cart.filter((_, j) => j !== i))}
                       >
                         <X size={16} />
@@ -801,10 +865,12 @@ export default function Store() {
               <p role="status" className="form-status">
                 {error}
               </p>
-              <p className="tiny">
-                Preview: er wordt geen bestelling geplaatst of betaling
-                uitgevoerd.
-              </p>
+              {!live && (
+                <p className="tiny">
+                  Preview: er wordt geen bestelling geplaatst of betaling
+                  uitgevoerd.
+                </p>
+              )}
             </>
           )}
         </Sheet>

@@ -1,14 +1,14 @@
 import Link from "next/link";
-import Stripe from "stripe";
+import { stripe } from "@/lib/shop";
 import { ClearCart } from "./clear-cart";
 
 export const metadata = { title: "Bedankt — Les Autres", robots: "noindex" };
 
 async function paid(sessionId: string | undefined) {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key || !sessionId) return false;
+  const s = stripe();
+  if (!s || !sessionId?.startsWith("cs_")) return false;
   try {
-    const session = await new Stripe(key).checkout.sessions.retrieve(sessionId);
+    const session = await s.checkout.sessions.retrieve(sessionId);
     return session.payment_status === "paid";
   } catch {
     return false;

@@ -1,41 +1,37 @@
 import { NextResponse } from "next/server";
-import Stripe from "stripe";
-import {
-  availability,
-  colors,
-  price,
-  sizes,
-  type CartItem,
-} from "@/lib/catalog";
+import type Stripe from "stripe";
+import { MAX_CART_LINES, sizes, type CartItem } from "@/lib/catalog";
+import { encodeLines, listProducts, SHOP_TAG, stripe } from "@/lib/shop";
 
 const SHIPPING_COUNTRIES: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[] =
   ["BE", "NL", "LU", "FR", "DE", "ES"];
 
-function validCart(input: unknown): CartItem[] | null {
-  if (!Array.isArray(input) || input.length === 0 || input.length > 20)
+function parseCart(input: unknown): CartItem[] | null {
+  if (!Array.isArray(input) || input.length === 0 || input.length > MAX_CART_LINES)
     return null;
   const cart: CartItem[] = [];
   for (const raw of input) {
     const item = raw as Partial<CartItem>;
     if (
-      typeof item.color !== "string" ||
-      !colors.some((c) => c.id === item.color) ||
+      typeof item.productId !== "string" ||
       !sizes.includes(item.size as CartItem["size"]) ||
       !Number.isInteger(item.quantity) ||
-      (item.quantity as number) <= 0
+      (item.quantity as number) <= 0 ||
+      cart.some((c) => c.productId === item.productId && c.size === item.size)
     )
       return null;
-    const stock = availability(item.color, item.size as CartItem["size"]);
-    if (stock.kind === "soldout" || (item.quantity as number) > stock.quantity)
-      return null;
-    cart.push(item as CartItem);
+    cart.push({
+      productId: item.productId,
+      size: item.size as CartItem["size"],
+      quantity: item.quantity as number,
+    });
   }
   return cart;
 }
 
 export async function POST(request: Request) {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) {
+  const s = stripe();
+  if (!s) {
     return NextResponse.json(
       { error: "Betalen is nog niet actief. Probeer het later opnieuw." },
       { status: 503 },
@@ -43,43 +39,62 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const cart = validCart(body?.cart);
+  const cart = parseCart(body?.cart);
   if (!cart) {
-    return NextResponse.json(
-      { error: "Je winkelmand is ongeldig of niet meer op voorraad." },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Je winkelmand is ongeldig." }, { status: 400 });
   }
 
-  const origin =
-    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
-  const stripe = new Stripe(key);
-
   try {
-    const session = await stripe.checkout.sessions.create({
+    const products = await listProducts();
+    for (const item of cart) {
+      const p = products.find((x) => x.id === item.productId);
+      if (!p || p.price <= 0 || p.stock[item.size] < item.quantity) {
+        return NextResponse.json(
+          {
+            error: p
+              ? `${p.name} in maat ${item.size} is niet meer (voldoende) op voorraad.`
+              : "Een product in je winkelmand is niet meer beschikbaar.",
+          },
+          { status: 409 },
+        );
+      }
+    }
+
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+    const lines = JSON.stringify(encodeLines(cart, products));
+    if (lines.length > 500) {
+      return NextResponse.json(
+        { error: "Te veel verschillende artikelen in één bestelling." },
+        { status: 400 },
+      );
+    }
+    const sizeSummary = cart
+      .map((c) => `${products.find((p) => p.id === c.productId)!.name} — maat ${c.size} × ${c.quantity}`)
+      .join(" · ");
+
+    const session = await s.checkout.sessions.create({
       mode: "payment",
       locale: "nl",
       line_items: cart.map((item) => {
-        const color = colors.find((c) => c.id === item.color)!;
-        const preorder = availability(item.color, item.size).kind === "preorder";
+        const p = products.find((x) => x.id === item.productId)!;
         return {
           quantity: item.quantity,
           price_data: {
             currency: "eur",
-            unit_amount: Math.round(price * 100),
+            unit_amount: p.price,
             product_data: {
-              name: `The Baddies Tee — ${item.size}${preorder ? " (pre-order)" : ""}`,
-              description: color.name,
-              metadata: { color: item.color, size: item.size },
+              name: `${p.name} — maat ${item.size}`,
+              ...(p.image.startsWith("https://") ? { images: [p.image] } : {}),
+              metadata: { shop_line: "1", product_id: p.id, size: item.size },
             },
           },
         };
       }),
       shipping_address_collection: { allowed_countries: SHIPPING_COUNTRIES },
       phone_number_collection: { enabled: true },
-      metadata: {
-        cart: JSON.stringify(cart.map((c) => [c.color, c.size, c.quantity])),
-      },
+      custom_text: { submit: { message: sizeSummary.slice(0, 1200) } },
+      metadata: { shop: SHOP_TAG, lines },
+      payment_intent_data: { metadata: { shop: SHOP_TAG } },
       success_url: `${origin}/bedankt?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/#drop`,
     });
