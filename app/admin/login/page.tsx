@@ -8,15 +8,24 @@ export default async function Login() {
   if (await isAdmin()) redirect("/admin");
   return (
     <main className="admin-login">
-      <h1>LES AUTRES — ADMIN</h1>
-      {adminConfigured() ? (
-        <LoginForm />
-      ) : (
-        <p className="admin-alert">
-          Admin is nog niet actief. Zet <code>ADMIN_PASSWORD</code> in de
-          environment variables van Vercel en deploy opnieuw.
-        </p>
-      )}
+      <div className="admin-login-card">
+        <div className="admin-brand" style={{ padding: 0 }}>
+          <span className="admin-brand-mark">LA</span>
+          Les Autres
+        </div>
+        <div>
+          <h1>Inloggen</h1>
+          <p className="admin-note">Ga verder naar het beheer van je shop.</p>
+        </div>
+        {adminConfigured() ? (
+          <LoginForm />
+        ) : (
+          <p className="admin-alert">
+            Admin is nog niet actief. Zet <code>ADMIN_PASSWORD</code> in de
+            environment variables van Vercel en deploy opnieuw.
+          </p>
+        )}
+      </div>
     </main>
   );
 }

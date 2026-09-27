@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
 import { getProduct, stripe } from "@/lib/shop";
@@ -17,8 +18,14 @@ export default async function EditProduct({
   if (!product) notFound();
   return (
     <>
-      <Link href="/admin/products">← Producten</Link>
-      <h1>{product.name}</h1>
+      <div className="admin-head">
+        <div className="admin-title-row">
+          <Link href="/admin/products" className="admin-back" aria-label="Terug naar producten">
+            <ArrowLeft size={18} />
+          </Link>
+          <h1>{product.name}</h1>
+        </div>
+      </div>
       {saved && <p className="admin-ok">Product aangemaakt.</p>}
       {!stripe() && (
         <p className="admin-alert">

@@ -53,7 +53,7 @@ export function ImageManager({
 
   return (
     <fieldset>
-      <legend>Foto&apos;s ({images.length}/{MAX_IMAGES}) — de eerste is de hoofdfoto</legend>
+      <legend className="sr-only">Foto&apos;s</legend>
       <input type="hidden" name="images" value={JSON.stringify(images)} />
       <div className="admin-images">
         {images.map((src, i) => (
