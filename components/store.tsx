@@ -559,7 +559,6 @@ export default function Store({
         <section id="perspective" className="editorial">
           <div className="section-label">
             <span>THE WORLD IS OUR BACKDROP.</span>
-            <span>LES AUTRES — IN THE STREETS</span>
           </div>
           <div className="photo-strip">
             {photos.map((photo, i) => (
@@ -572,10 +571,6 @@ export default function Store({
                 />
               </div>
             ))}
-          </div>
-          <div className="editorial-foot">
-            <span className="micro">SAME STREETS. DIFFERENT STORIES.</span>
-            <span className="tiny">Sfeerbeelden · campagne volgt</span>
           </div>
         </section>
         <section id="drop" className="product-section">
