@@ -685,7 +685,7 @@ export default function Store({
                 },
                 {
                   title: "VERZENDING & RETOUR",
-                  body: "Verzending vanuit België. Verzendkosten en levertijd verschijnen vóór betaling. Je kunt binnen 14 dagen na ontvangst je herroeping melden. Pre-orders krijgen vóór de lancering een bevestigde verzenddatum.",
+                  body: `Verzending vanuit België, ${company.shippingCost}. We verzenden ${company.dispatchTime}; je krijgt een trackinglink. Je hebt 14 dagen na ontvangst om te herroepen en 2 jaar wettelijke garantie.`,
                 },
                 {
                   title: "CARE FOR YOUR OTHERS",
