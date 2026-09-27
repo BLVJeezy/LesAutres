@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAdmin, login, logout } from "@/lib/admin-auth";
 import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
+import { deleteSubscriber } from "@/lib/subscribers";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
 const EMULATOR_PREFIX = process.env.FIREBASE_STORAGE_EMULATOR_HOST
@@ -10,7 +11,14 @@ const EMULATOR_PREFIX = process.env.FIREBASE_STORAGE_EMULATOR_HOST
   : null;
 const validImage = (u: unknown) =>
   typeof u === "string" && (IMAGE_URL.test(u) || Boolean(EMULATOR_PREFIX && u.startsWith(EMULATOR_PREFIX)));
-import { createProduct, stripe, updateProduct, type ProductInput } from "@/lib/shop";
+import {
+  createProduct,
+  setOrderShipped,
+  stripe,
+  syncOrdersFromStripe,
+  updateProduct,
+  type ProductInput,
+} from "@/lib/shop";
 
 export type FormState = { error?: string; ok?: string; savedId?: string };
 
@@ -97,12 +105,29 @@ export async function saveProductAction(_: FormState, form: FormData): Promise<F
 
 export async function toggleShippedAction(form: FormData) {
   await guard();
+  const shipped = form.get("shipped") === "1";
+  const orderId = String(form.get("orderId") ?? "");
+  if (orderId.startsWith("cs_") && (await setOrderShipped(orderId, shipped))) {
+    revalidatePath("/admin", "layout");
+    return;
+  }
   const s = stripe();
   const pi = String(form.get("paymentIntent") ?? "");
   if (!s || !pi.startsWith("pi_")) return;
-  const shipped = form.get("shipped") === "1";
   await s.paymentIntents.update(pi, {
     metadata: { shipped_at: shipped ? String(Math.floor(Date.now() / 1000)) : "" },
   });
   revalidatePath("/admin", "layout");
+}
+
+export async function syncOrdersAction(): Promise<void> {
+  await guard();
+  await syncOrdersFromStripe();
+  revalidatePath("/admin", "layout");
+}
+
+export async function deleteSubscriberAction(form: FormData) {
+  await guard();
+  await deleteSubscriber(String(form.get("id") ?? ""));
+  revalidatePath("/admin/subscribers");
 }

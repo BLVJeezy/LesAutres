@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Home, Inbox, Tag } from "lucide-react";
+import { ExternalLink, Home, Inbox, Mail, Tag } from "lucide-react";
 
 export function NavLinks({ openOrders }: { openOrders: number }) {
   const path = usePathname();
@@ -9,6 +9,7 @@ export function NavLinks({ openOrders }: { openOrders: number }) {
     { href: "/admin", label: "Home", icon: Home },
     { href: "/admin/orders", label: "Bestellingen", icon: Inbox, count: openOrders },
     { href: "/admin/products", label: "Producten", icon: Tag },
+    { href: "/admin/subscribers", label: "Inschrijvingen", icon: Mail },
   ];
   return (
     <nav aria-label="Admin">
