@@ -36,6 +36,7 @@ import {
   type ShopProduct,
 } from "@/lib/catalog";
 import { company } from "@/lib/company";
+import { FREE_FROM, SHIPPING_OPTIONS, shippingFee, type ShippingId } from "@/lib/shipping";
 import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
 import { ShotCarousel } from "./shot-carousel";
@@ -189,8 +190,18 @@ const COUNTRIES: [string, string][] = [
   ["ES", "Spanje"],
 ];
 
-function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Customer) => void }) {
+function CheckoutForm({
+  busy,
+  subtotal,
+  onSubmit,
+}: {
+  busy: boolean;
+  subtotal: number;
+  onSubmit: (c: Customer, shipping: ShippingId) => void;
+}) {
   const [c, setC] = useState<Customer>(EMPTY_CUSTOMER);
+  const [ship, setShip] = useState<ShippingId>("bpost");
+  const fee = shippingFee(ship, subtotal);
   const field = (key: keyof Customer, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="checkout-field">
       <span>{label}</span>
@@ -207,7 +218,7 @@ function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Custome
       className="checkout-form"
       onSubmit={(e) => {
         e.preventDefault();
-        onSubmit(c);
+        onSubmit(c, ship);
       }}
     >
       <span className="micro">02 — VERZENDING</span>
@@ -227,8 +238,31 @@ function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Custome
           ))}
         </select>
       </label>
+      <fieldset className="shipping-options">
+        <legend className="micro">03 — LEVERING</legend>
+        {SHIPPING_OPTIONS.map((o) => {
+          const f = shippingFee(o.id, subtotal);
+          return (
+            <label key={o.id} className={ship === o.id ? "active" : ""}>
+              <input type="radio" name="shipping" value={o.id} checked={ship === o.id} onChange={() => setShip(o.id)} />
+              <span>
+                <b>{o.label}</b>
+                <small>{o.note}</small>
+              </span>
+              <em>{f ? money(f) : "Gratis"}</em>
+            </label>
+          );
+        })}
+        {subtotal < FREE_FROM && (
+          <p className="tiny">Gratis verzending met bpost, GLS of UPS vanaf {money(FREE_FROM)}.</p>
+        )}
+      </fieldset>
+      <div className="cart-total checkout-total">
+        <span>TOTAAL</span>
+        <b>{money(subtotal + fee)}</b>
+      </div>
       <p className="tiny checkout-legal">
-        Verzending {company.shippingCost} · verzonden {company.dispatchTime} · 14 dagen herroepingsrecht ·
+        Verzonden {company.dispatchTime} · 14 dagen herroepingsrecht ·
         2 jaar wettelijke garantie. De betaling wordt namens {company.brand} geïnd door{" "}
         {company.paymentCollector.split(" (")[0]}.
       </p>
@@ -972,16 +1006,17 @@ export default function Store({
                 <b>{money(total)}</b>
               </div>
               <p className="tiny">
-                Inclusief btw · veilig betalen via Revolut.
+                Inclusief btw · gratis verzending vanaf € 50 · veilig betalen via Revolut.
               </p>
               {checkoutStep ? (
                 <CheckoutForm
                   busy={busy}
-                  onSubmit={async (customer) => {
+                  subtotal={total}
+                  onSubmit={async (customer, shipping) => {
                     setBusy(true);
                     setError("");
                     try {
-                      await onCheckout(cart, customer);
+                      await onCheckout(cart, customer, shipping);
                     } catch (e) {
                       setError((e as Error).message);
                     } finally {

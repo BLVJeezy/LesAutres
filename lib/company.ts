@@ -23,10 +23,10 @@ export const company = {
   paymentCollector: "Solyn Global Ltd (Londen, Verenigd Koninkrijk)",
   /** Shop policy. */
   countries: ["België", "Nederland", "Luxemburg", "Frankrijk", "Duitsland", "Spanje"],
-  shippingCost: "gratis",
+  shippingCost: "gratis met bpost, GLS of UPS vanaf € 50 (anders € 4,95); persoonlijke levering door de CEO kost € 500",
   dispatchTime: "binnen 3 werkdagen na je betaling",
   deliveryTime: "meestal 1 tot 3 werkdagen in België en 2 tot 6 werkdagen in de andere landen",
-  carrier: "bpost of een andere erkende vervoerder",
+  carrier: "bpost, GLS of UPS (naar keuze), of persoonlijk door de CEO",
   updated: "27 september 2026",
 };
 

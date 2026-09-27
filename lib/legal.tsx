@@ -40,8 +40,8 @@ export const legalPages: Record<string, Page> = {
         title: "3. Aanbod en prijzen",
         body: (
           <p>
-            Alle prijzen zijn in euro en inclusief btw. Verzending is {c.shippingCost} naar{" "}
-            {c.countries.join(", ")}. Foto&apos;s geven het product zo getrouw mogelijk weer; kleine verschillen in
+            Alle prijzen zijn in euro en inclusief btw. We verzenden naar {c.countries.join(", ")}.
+            Verzending is {c.shippingCost}. Je ziet de verzendkosten en het totaal altijd vóór je betaalt. Foto&apos;s geven het product zo getrouw mogelijk weer; kleine verschillen in
             kleur door schermen zijn mogelijk. Een aanbod geldt zolang de voorraad strekt. Een kennelijke
             vergissing in een prijs of productomschrijving bindt ons niet; in dat geval nemen we contact met je op
             en kun je de bestelling kosteloos annuleren.
@@ -384,7 +384,7 @@ export const legalPages: Record<string, Page> = {
         title: "Terugbetaling",
         body: (
           <p>
-            We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten, binnen 14 dagen nadat
+            We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten (tot het bedrag van onze goedkoopste standaardlevering; de meerprijs voor levering door de CEO betalen we niet terug), binnen 14 dagen nadat
             we je herroeping ontvangen. We gebruiken hetzelfde betaalmiddel als waarmee je betaalde, tenzij je
             uitdrukkelijk iets anders vraagt; dat kost je niets. We mogen wachten met terugbetalen tot we het artikel
             terug hebben of tot je aantoont dat je het hebt teruggestuurd.

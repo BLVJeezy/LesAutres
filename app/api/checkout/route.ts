@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MAX_CART_LINES, sizes, type CartItem } from "@/lib/catalog";
 import { firebaseConfigured } from "@/lib/firebase";
 import { revolutConfigured } from "@/lib/revolut";
+import { isShippingId } from "@/lib/shipping";
 import { encodeLines, listProducts, startCheckout, type Checkout } from "@/lib/shop";
 
 const SHIPPING_COUNTRIES = ["BE", "NL", "LU", "FR", "DE", "ES"];
@@ -76,6 +77,10 @@ export async function POST(request: Request) {
   if (!cart) {
     return NextResponse.json({ error: "Je winkelmand is ongeldig." }, { status: 400 });
   }
+  const shippingMethod = body?.shippingMethod ?? "bpost";
+  if (!isShippingId(shippingMethod)) {
+    return NextResponse.json({ error: "Kies een geldige verzendmethode." }, { status: 400 });
+  }
   const who = parseCustomer(body?.customer);
   if (!who) {
     return NextResponse.json(
@@ -107,6 +112,7 @@ export async function POST(request: Request) {
     const url = await startCheckout({
       lines: encodeLines(cart, products),
       ...who,
+      shippingMethod,
       description,
       origin,
     });

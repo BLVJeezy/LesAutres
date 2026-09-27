@@ -1,4 +1,5 @@
 import { money } from "./catalog";
+import { shippingLabel } from "./shipping";
 import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
@@ -60,6 +61,10 @@ function totals(order: Order) {
       <tr><td style="padding-top:16px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
           <tr>
+            <td style="font:12px monospace;color:#989a92;padding-bottom:8px">VERZENDING · ${esc(shippingLabel(order.shippingMethod).toUpperCase())}</td>
+            <td style="text-align:right;font:13px monospace;color:#efeee8;padding-bottom:8px">${order.shippingFee ? money(order.shippingFee) : "Gratis"}</td>
+          </tr>
+          <tr>
             <td style="font:12px monospace;color:#989a92">TOTAAL <span style="font-size:10px">(INCL. BTW)</span></td>
             <td style="text-align:right;font:bold 16px monospace;color:#efeee8">${money(order.total)}</td>
           </tr>
@@ -101,6 +106,7 @@ export function customerEmail(order: Order, number: string, lines: MailLine[]) {
     `Je bestelling ${number} is bevestigd. Zodra je pakket vertrekt, sturen we je een trackinglink.`,
     ``,
     ...lines.map((l) => `- ${l.name}, maat ${l.size} × ${l.qty}: ${money(l.price * l.qty)}`),
+    `Verzending (${shippingLabel(order.shippingMethod)}): ${order.shippingFee ? money(order.shippingFee) : "gratis"}`,
     `Totaal (incl. btw): ${money(order.total)}`,
     ``,
     `Verzenden naar: ${order.name}, ${order.address}`,
@@ -124,6 +130,7 @@ export function shopEmail(order: Order, number: string, lines: MailLine[]) {
         ${row("E-MAIL", `<a href="mailto:${esc(order.email)}" style="color:#d595a4">${esc(order.email)}</a>`)}
         ${order.phone ? row("TELEFOON", esc(order.phone)) : ""}
         ${row("ADRES", esc(order.address))}
+        ${row("LEVERING", `${esc(shippingLabel(order.shippingMethod))} · ${order.shippingFee ? money(order.shippingFee) : "gratis"}`)}
         ${row("BETAALD", money(order.total))}
       </table></td></tr>
       <tr><td style="padding-top:22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${linesTable(lines)}</table></td></tr>
