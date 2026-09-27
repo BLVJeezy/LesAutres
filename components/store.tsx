@@ -664,7 +664,7 @@ export default function Store({
               </span>
             </div>
             <div className="payments">
-              <b>Bancontact</b>
+              <b>Revolut Pay</b>
               <span>Apple Pay</span>
               <span>G Pay</span>
               <b>VISA</b>
