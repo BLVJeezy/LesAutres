@@ -81,18 +81,18 @@ export default async function Dashboard({
       </p>
 
       <h2>Per product</h2>
-      <table className="admin-table">
+      <table className="admin-table stack">
         <thead>
           <tr><th>Product</th><th>Stuks</th><th>Omzet</th><th>Kostprijs</th><th>Brutomarge</th></tr>
         </thead>
         <tbody>
           {[...perProduct].map(([id, r]) => (
             <tr key={id}>
-              <td>{name(id)}</td>
-              <td>{r.units}</td>
-              <td>{money(r.revenue)}</td>
-              <td>{money(r.cost)}</td>
-              <td>{money(Math.round(r.revenue / (1 + VAT_RATE)) - r.cost)}</td>
+              <td className="stack-title">{name(id)}</td>
+              <td data-label="Stuks">{r.units}</td>
+              <td data-label="Omzet">{money(r.revenue)}</td>
+              <td data-label="Kostprijs">{money(r.cost)}</td>
+              <td data-label="Brutomarge">{money(Math.round(r.revenue / (1 + VAT_RATE)) - r.cost)}</td>
             </tr>
           ))}
           {!perProduct.size && (
@@ -123,18 +123,18 @@ export default async function Dashboard({
         <h2>Laatste bestellingen</h2>
         <Link href="/admin/orders">Alle bestellingen →</Link>
       </div>
-      <table className="admin-table">
+      <table className="admin-table stack">
         <thead>
           <tr><th>Datum</th><th>Klant</th><th>Totaal</th><th>Winst</th><th>Status</th></tr>
         </thead>
         <tbody>
           {orders.slice(0, 8).map((o) => (
             <tr key={o.id}>
-              <td>{new Date(o.created * 1000).toLocaleString("nl-BE")}</td>
-              <td>{o.name || o.email}</td>
-              <td>{money(o.total)}</td>
-              <td>{money(o.profit)}</td>
-              <td>{o.refunded >= o.total ? "Terugbetaald" : o.shippedAt ? "Verzonden" : "Te verzenden"}</td>
+              <td data-label="Datum">{new Date(o.created * 1000).toLocaleString("nl-BE")}</td>
+              <td className="stack-title">{o.name || o.email}</td>
+              <td data-label="Totaal">{money(o.total)}</td>
+              <td data-label="Winst">{money(o.profit)}</td>
+              <td data-label="Status">{o.refunded >= o.total ? "Terugbetaald" : o.shippedAt ? "Verzonden" : "Te verzenden"}</td>
             </tr>
           ))}
           {!orders.length && <tr><td colSpan={5}>Nog geen bestellingen.</td></tr>}

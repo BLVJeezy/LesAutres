@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
+import { NavLinks } from "./nav-links";
 import { requireAdmin } from "@/lib/admin-auth";
 import { stripe } from "@/lib/shop";
 import { logoutAction } from "../actions";
@@ -12,12 +12,7 @@ export default async function Panel({ children }: { children: ReactNode }) {
     <>
       <header className="admin-nav">
         <b>LES AUTRES</b>
-        <nav>
-          <Link href="/admin">Dashboard</Link>
-          <Link href="/admin/orders">Bestellingen</Link>
-          <Link href="/admin/products">Producten</Link>
-          <a href="/" target="_blank" rel="noopener">Shop ↗</a>
-        </nav>
+        <NavLinks />
         <form action={logoutAction}>
           <button className="admin-link">Uitloggen</button>
         </form>
