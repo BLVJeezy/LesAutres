@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
+import { indexable, siteUrl } from "@/lib/site";
 export default function sitemap(): MetadataRoute.Sitemap {
-  const url = process.env.NEXT_PUBLIC_SITE_URL;
-  if (!url) return [];
-  return ["", "/privacy", "/voorwaarden", "/retour", "/verzending"].map(
+  if (!indexable()) return [];
+  const url = siteUrl();
+  return ["", "/voorwaarden", "/privacy", "/cookies", "/retour", "/verzending", "/herroepen"].map(
     (path) => ({ url: `${url}${path}` }),
   );
 }

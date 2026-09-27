@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
+import { indexable, siteUrl } from "@/lib/site";
 export default function robots(): MetadataRoute.Robots {
-  const url = process.env.NEXT_PUBLIC_SITE_URL;
+  const url = indexable() ? siteUrl() : null;
   return {
     rules: {
       userAgent: "*",

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-const url = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+import { indexable, siteUrl } from "@/lib/site";
+const url = siteUrl();
 export const metadata: Metadata = {
   metadataBase: new URL(url),
   title: "Les Autres — Same people. Different perspective.",
@@ -15,8 +16,8 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   robots: {
-    index: !!process.env.NEXT_PUBLIC_SITE_URL,
-    follow: !!process.env.NEXT_PUBLIC_SITE_URL,
+    index: indexable(),
+    follow: indexable(),
   },
 };
 export default function RootLayout({
