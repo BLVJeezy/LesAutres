@@ -177,6 +177,50 @@ const photos = [
     alt: "Close-up van de BADDIES IN BELGICA print",
   },
 ];
+function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
+  const [index, setIndex] = useState(0);
+  const track = useRef<HTMLDivElement>(null);
+  const go = (i: number) => {
+    const el = track.current;
+    if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
+  };
+  return (
+    <div className="product-gallery">
+      <div
+        className="gallery-track"
+        ref={track}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setIndex(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+      >
+        {images.map((src, i) => (
+          <div className="gallery-slide" key={src + i}>
+            <ProductImage
+              className="official-product-photo custom"
+              src={src}
+              alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+              sizes="(max-width: 700px) 100vw, 50vw"
+            />
+          </div>
+        ))}
+      </div>
+      {images.length > 1 && (
+        <div className="gallery-dots">
+          {images.map((src, i) => (
+            <button
+              key={src + i}
+              aria-label={`Foto ${i + 1}`}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => go(i)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ProductImage({ src, alt, className, sizes: sizesAttr }: { src: string; alt: string; className?: string; sizes: string }) {
   return src.startsWith("/") ? (
     <Image className={className} src={src} alt={alt} fill sizes={sizesAttr} />
@@ -463,22 +507,10 @@ export default function Store({
                     />
                   </SceneBoundary>
                 </>
-              ) : featured.image &&
-                featured.image !== "/images/drop-001-product.jpeg" ? (
-                <ProductImage
-                  className="official-product-photo custom"
-                  src={featured.image}
-                  alt={featured.name}
-                  sizes="(max-width: 700px) 100vw, 50vw"
-                />
               ) : (
-                <Image
-                  className="official-product-photo"
-                  src="/images/drop-001-product.jpeg"
-                  alt="The Baddies Tee — off-white T-shirt met roze BADDIES en zwarte IN BELGICA, HOLLANDA, FRANSA, ESPAGNA print"
-                  width={1085}
-                  height={992}
-                  sizes="(max-width: 700px) 100vw, 50vw"
+                <ProductGallery
+                  images={featured.images?.length ? featured.images : [featured.image]}
+                  alt={featured.name}
                 />
               )}
             </div>

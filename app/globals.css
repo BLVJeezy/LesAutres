@@ -1767,3 +1767,51 @@ footer {
   }
 }
 
+
+/* Product gallery */
+.product-gallery {
+  position: absolute;
+  inset: 0;
+}
+.gallery-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.gallery-track::-webkit-scrollbar {
+  display: none;
+}
+.gallery-slide {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+.gallery-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+.gallery-dots button {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+.gallery-dots button::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ffffff66;
+  box-shadow: 0 0 0 1px #0003;
+}
+.gallery-dots button[aria-current]::before {
+  background: #fff;
+}
