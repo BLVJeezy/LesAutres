@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { randomBytes } from "node:crypto";
+import { customerEmail, mailConfigured, sendMail, shopEmail, type MailLine } from "./mail";
 import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
 import { firestore } from "./firebase";
 import {
@@ -289,8 +290,39 @@ export async function confirmOrder(id: string): Promise<boolean> {
     tx.update(ref, { status: "paid", created: Math.floor(Date.now() / 1000), updatedAt: Date.now() });
     return true;
   });
-  if (first) await adjustStock(fromDoc(d).lines, -1);
+  if (first) {
+    await adjustStock(fromDoc(d).lines, -1);
+    await sendOrderEmails(id).catch((error) => console.error("Order e-mails failed", error));
+  }
   return true;
+}
+
+/** Order with display number and product names/photos, for the thank-you page and e-mails. */
+export async function orderSummary(id: string) {
+  const db = firestore();
+  if (!db || !/^[\w-]{1,64}$/.test(id)) return null;
+  const snap = await db.collection(ORDERS).doc(id).get();
+  if (!snap.exists || (snap.data() as OrderDoc).status !== "paid") return null;
+  const order = fromDoc({ ...(snap.data() as OrderDoc), id });
+  const numbers = orderNumbers(await listOrders());
+  const products = new Map<string, ShopProduct | null>();
+  for (const [pid] of order.lines) if (!products.has(pid)) products.set(pid, await getProduct(pid));
+  const lines: MailLine[] = order.lines.map(([pid, size, qty, price]) => {
+    const p = products.get(pid);
+    return { name: p?.name ?? "Artikel", size, qty, price, image: p?.image ?? "" };
+  });
+  return { order, number: `#${numbers.get(id) ?? ""}`, lines };
+}
+
+async function sendOrderEmails(id: string) {
+  if (!mailConfigured()) return;
+  const s = await orderSummary(id);
+  if (!s) return;
+  const shop = process.env.ORDER_NOTIFY_EMAIL;
+  const jobs = [sendMail(s.order.email, customerEmail(s.order, s.number, s.lines), shop)];
+  if (shop) jobs.push(sendMail(shop, shopEmail(s.order, s.number, s.lines), s.order.email));
+  const results = await Promise.allSettled(jobs);
+  for (const r of results) if (r.status === "rejected") console.error("Sending order e-mail failed", r.reason);
 }
 
 /** Looks up our order by the Revolut order id (used by the webhook). */
