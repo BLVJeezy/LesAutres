@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
-import { toggleShippedAction } from "../../../actions";
+import { toggleRefundedAction, toggleShippedAction } from "../../../actions";
 import { STATUS_BADGE } from "../status";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
@@ -65,16 +65,24 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                   );
                 })}
               </ul>
-              {order.paymentIntent && status !== "refunded" && (
-                <form action={toggleShippedAction} style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                <form action={toggleRefundedAction}>
                   <input type="hidden" name="orderId" value={order.id} />
-                  <input type="hidden" name="paymentIntent" value={order.paymentIntent} />
-                  <input type="hidden" name="shipped" value={order.shippedAt ? "0" : "1"} />
-                  <button className={`admin-btn ${order.shippedAt ? "secondary" : ""}`}>
-                    {order.shippedAt ? "Markeer als niet verzonden" : "Markeer als verzonden"}
+                  <input type="hidden" name="refunded" value={status === "refunded" ? "0" : "1"} />
+                  <button className="admin-btn secondary">
+                    {status === "refunded" ? "Terugbetaling ongedaan maken" : "Markeer als terugbetaald"}
                   </button>
                 </form>
-              )}
+                {status !== "refunded" && (
+                  <form action={toggleShippedAction}>
+                    <input type="hidden" name="orderId" value={order.id} />
+                    <input type="hidden" name="shipped" value={order.shippedAt ? "0" : "1"} />
+                    <button className={`admin-btn ${order.shippedAt ? "secondary" : ""}`}>
+                      {order.shippedAt ? "Markeer als niet verzonden" : "Markeer als verzonden"}
+                    </button>
+                  </form>
+                )}
+              </div>
             </div>
           </section>
 
@@ -96,8 +104,6 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 <dd className="total">{money(order.total - order.refunded)}</dd>
                 <dt>Btw (inbegrepen)</dt>
                 <dd>{money(order.vat)}</dd>
-                <dt>Stripe-kosten</dt>
-                <dd>−{money(order.fee)}</dd>
                 <dt>Kostprijs</dt>
                 <dd>−{money(order.cost)}</dd>
                 <dt className="total">Winst</dt>

@@ -34,12 +34,30 @@ export async function onSubscribe(
   trackEvent("join_waitlist", context);
   return data;
 }
-export async function onCheckout(cart: CartItem[]) {
+export type Customer = {
+  name: string;
+  email: string;
+  phone: string;
+  street: string;
+  postcode: string;
+  city: string;
+  country: string;
+};
+export const EMPTY_CUSTOMER: Customer = {
+  name: "",
+  email: "",
+  phone: "",
+  street: "",
+  postcode: "",
+  city: "",
+  country: "BE",
+};
+export async function onCheckout(cart: CartItem[], customer: Customer) {
   trackEvent("begin_checkout", { cart });
   const response = await fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cart }),
+    body: JSON.stringify({ cart, customer }),
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error);

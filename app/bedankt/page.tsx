@@ -1,16 +1,15 @@
 import Link from "next/link";
-import { stripe } from "@/lib/shop";
+import { confirmOrder } from "@/lib/shop";
 import { ClearCart } from "./clear-cart";
 
 export const metadata = { title: "Bedankt — Les Autres", robots: "noindex" };
 
-async function paid(sessionId: string | undefined) {
-  const s = stripe();
-  if (!s || !sessionId?.startsWith("cs_")) return false;
+async function paid(orderId: string | undefined) {
+  if (!orderId) return false;
   try {
-    const session = await s.checkout.sessions.retrieve(sessionId);
-    return session.payment_status === "paid";
-  } catch {
+    return await confirmOrder(orderId);
+  } catch (error) {
+    console.error("Confirming order failed", error);
     return false;
   }
 }
@@ -18,10 +17,10 @@ async function paid(sessionId: string | undefined) {
 export default async function Bedankt({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ order?: string }>;
 }) {
-  const { session_id } = await searchParams;
-  const ok = await paid(session_id);
+  const { order } = await searchParams;
+  const ok = await paid(order);
   return (
     <main className="legal">
       <Link href="/">← LES AUTRES</Link>

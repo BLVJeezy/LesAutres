@@ -1,5 +1,6 @@
 import { cache } from "react";
-import Stripe from "stripe";
+import { randomBytes } from "node:crypto";
+import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
 import { firestore } from "./firebase";
 import {
   emptyStock,
@@ -13,25 +14,6 @@ import {
   type Size,
 } from "./catalog";
 
-export const SHOP_TAG = "les-autres";
-
-let client: Stripe | null = null;
-export function stripe(): Stripe | null {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) return null;
-  // STRIPE_API_BASE points the SDK at a local stripe-mock; leave unset in production.
-  const base = process.env.STRIPE_API_BASE ? new URL(process.env.STRIPE_API_BASE) : null;
-  client ??= new Stripe(key, {
-    timeout: 10_000,
-    maxNetworkRetries: 1,
-    ...(base && {
-      host: base.hostname,
-      port: Number(base.port) || undefined,
-      protocol: base.protocol.replace(":", "") as "http" | "https",
-    }),
-  });
-  return client;
-}
 
 const PRODUCTS = "products";
 const SEED_ID = "baddies-tee";
@@ -162,25 +144,6 @@ export function encodeLines(cart: CartItem[], products: ShopProduct[]): OrderLin
   });
 }
 
-export function decodeLines(raw: string | undefined): OrderLine[] {
-  if (!raw) return [];
-  try {
-    const data = JSON.parse(raw);
-    if (!Array.isArray(data)) return [];
-    return data.filter(
-      (l): l is OrderLine =>
-        Array.isArray(l) &&
-        typeof l[0] === "string" &&
-        sizes.includes(l[1]) &&
-        Number.isInteger(l[2]) &&
-        Number.isInteger(l[3]) &&
-        Number.isInteger(l[4]),
-    );
-  } catch {
-    return [];
-  }
-}
-
 export async function adjustStock(lines: OrderLine[], direction: -1 | 1) {
   const db = firestore();
   if (!db) return;
@@ -201,10 +164,11 @@ export async function adjustStock(lines: OrderLine[], direction: -1 | 1) {
 
 export type Order = {
   id: string;
-  paymentIntent: string | null;
+  paymentId: string | null;
   created: number;
   email: string;
   name: string;
+  phone: string;
   address: string;
   lines: OrderLine[];
   total: number;
@@ -217,130 +181,125 @@ export type Order = {
 };
 
 const exVat = (cents: number) => Math.round(cents / (1 + VAT_RATE));
-
-function formatAddress(a: Stripe.Address | null | undefined) {
-  if (!a) return "";
-  return [a.line1, a.line2, `${a.postal_code ?? ""} ${a.city ?? ""}`.trim(), a.country]
-    .filter(Boolean)
-    .join(", ");
-}
-
 const ORDERS = "orders";
-const SESSION_EXPAND = ["payment_intent.latest_charge.balance_transaction"];
 
-/** Builds an Order from a Checkout Session expanded with payment_intent.latest_charge.balance_transaction. */
-export function orderFromSession(session: Stripe.Checkout.Session): Order | null {
-  if (session.payment_status !== "paid" || session.metadata?.shop !== SHOP_TAG) return null;
-  const pi = session.payment_intent as Stripe.PaymentIntent | null;
-  const charge = pi?.latest_charge as Stripe.Charge | null | undefined;
-  const bt = charge?.balance_transaction as Stripe.BalanceTransaction | null | undefined;
-  const lines = decodeLines(session.metadata?.lines);
-  const total = session.amount_total ?? 0;
-  const refunded = charge?.amount_refunded ?? 0;
-  const fullyRefunded = total > 0 && refunded >= total;
-  const net = total - refunded;
+/** Firestore has no nested arrays, so lines are stored as objects. */
+type OrderDoc = Omit<Order, "lines"> & {
+  status: "pending" | "paid";
+  lines: { productId: string; size: Size; qty: number; price: number; cost: number }[];
+  updatedAt: number;
+};
+
+function fromDoc(d: OrderDoc): Order {
+  const lines = (d.lines ?? []).map((l) => [l.productId, l.size, l.qty, l.price, l.cost] as OrderLine);
+  const net = (d.total ?? 0) - (d.refunded ?? 0);
+  const fullyRefunded = d.total > 0 && net <= 0;
   const cost = fullyRefunded ? 0 : lines.reduce((n, l) => n + l[2] * l[4], 0);
-  const fee = bt?.fee ?? 0;
+  const fee = d.fee ?? 0;
   const vat = net - exVat(net);
-  const shipping = session.collected_information?.shipping_details;
   return {
-    id: session.id,
-    paymentIntent: pi?.id ?? null,
-    created: session.created,
-    email: session.customer_details?.email ?? "",
-    name: shipping?.name ?? session.customer_details?.name ?? "",
-    address: formatAddress(shipping?.address ?? session.customer_details?.address),
+    id: d.id,
+    paymentId: d.paymentId ?? (d as { paymentIntent?: string }).paymentIntent ?? null,
+    created: d.created,
+    email: d.email ?? "",
+    name: d.name ?? "",
+    phone: d.phone ?? "",
+    address: d.address ?? "",
     lines,
-    total,
-    refunded,
+    total: d.total ?? 0,
+    refunded: d.refunded ?? 0,
     fee,
     cost,
     vat,
     profit: net - vat - fee - cost,
-    shippedAt: Number(pi?.metadata?.shipped_at) || null,
-  };
-}
-
-async function stripeOrders(sinceUnix?: number): Promise<Order[]> {
-  const s = stripe();
-  if (!s) return [];
-  const orders: Order[] = [];
-  for await (const session of s.checkout.sessions.list({
-    status: "complete",
-    limit: 100,
-    ...(sinceUnix ? { created: { gte: sinceUnix } } : {}),
-    expand: SESSION_EXPAND.map((e) => `data.${e}`),
-  })) {
-    const order = orderFromSession(session);
-    if (order) orders.push(order);
-  }
-  return orders;
-}
-
-/** Firestore has no nested arrays, so lines are stored as objects. */
-type OrderDoc = Omit<Order, "lines" | "shippedAt"> & {
-  lines: { productId: string; size: Size; qty: number; price: number; cost: number }[];
-  shippedAt?: number | null;
-  updatedAt: number;
-};
-
-function toDoc(o: Order): Omit<OrderDoc, "shippedAt"> {
-  const { shippedAt: _ignored, lines, ...rest } = o;
-  void _ignored;
-  return {
-    ...rest,
-    lines: lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
-    updatedAt: Date.now(),
-  };
-}
-
-function fromDoc(d: OrderDoc): Order {
-  return {
-    ...d,
-    lines: (d.lines ?? []).map((l) => [l.productId, l.size, l.qty, l.price, l.cost] as OrderLine),
     shippedAt: d.shippedAt ?? null,
   };
 }
 
-/** Stores a paid session as an order. Returns true when it was new (first time seen). */
-export async function recordPaidSession(sessionId: string): Promise<boolean> {
-  const s = stripe();
+export type Checkout = {
+  lines: OrderLine[];
+  customer: NewOrder["customer"];
+  shipping: NewOrder["shipping"];
+  description: string;
+  origin: string;
+};
+
+/** Stores a pending order in Firestore, opens a Revolut order for it and returns the payment page URL. */
+export async function startCheckout(c: Checkout): Promise<string> {
   const db = firestore();
-  if (!s || !db) return false;
-  const session = await s.checkout.sessions.retrieve(sessionId, { expand: SESSION_EXPAND });
-  const order = orderFromSession(session);
-  if (!order) return false;
-  try {
-    await db.collection(ORDERS).doc(order.id).create({ ...toDoc(order), shippedAt: order.shippedAt });
+  if (!db) throw new Error("Firebase is niet geconfigureerd.");
+  const id = `LA-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
+  const total = c.lines.reduce((n, l) => n + l[2] * l[3], 0);
+  const s = c.shipping;
+  const doc: OrderDoc = {
+    id,
+    status: "pending",
+    paymentId: null,
+    created: Math.floor(Date.now() / 1000),
+    email: c.customer.email,
+    name: c.customer.full_name,
+    phone: c.customer.phone ?? "",
+    address: [s.street_line_1, s.street_line_2, `${s.postcode} ${s.city}`, s.country_code].filter(Boolean).join(", "),
+    lines: c.lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
+    total,
+    refunded: 0,
+    fee: 0,
+    cost: 0,
+    vat: 0,
+    profit: 0,
+    shippedAt: null,
+    updatedAt: Date.now(),
+  };
+  await db.collection(ORDERS).doc(id).set(doc);
+  const order = await createRevolutOrder({
+    amount: total,
+    reference: id,
+    description: c.description,
+    redirectUrl: `${c.origin}/bedankt?order=${id}`,
+    customer: c.customer,
+    shipping: c.shipping,
+  });
+  await db.collection(ORDERS).doc(id).update({ paymentId: order.id, updatedAt: Date.now() });
+  if (!order.checkout_url) throw new Error("Revolut gaf geen betaalpagina terug.");
+  return order.checkout_url;
+}
+
+/**
+ * Marks the order paid once Revolut confirms it, and lowers stock exactly once.
+ * Safe to call repeatedly (webhook + thank-you page). Returns true when the order is paid.
+ */
+export async function confirmOrder(id: string): Promise<boolean> {
+  const db = firestore();
+  if (!db || !/^[\w-]{1,64}$/.test(id)) return false;
+  const ref = db.collection(ORDERS).doc(id);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const d = snap.data() as OrderDoc;
+  if (d.status === "paid") return true;
+  if (!d.paymentId) return false;
+  const remote = await getRevolutOrder(d.paymentId);
+  const paid =
+    (remote.state === "completed" || remote.state === "authorised") &&
+    remote.amount === d.total &&
+    remote.currency?.toUpperCase() === "EUR";
+  if (!paid) return false;
+  const first = await db.runTransaction(async (tx) => {
+    const cur = (await tx.get(ref)).data() as OrderDoc;
+    if (cur.status === "paid") return false;
+    tx.update(ref, { status: "paid", created: Math.floor(Date.now() / 1000), updatedAt: Date.now() });
     return true;
-  } catch {
-    await db.collection(ORDERS).doc(order.id).set(toDoc(order), { merge: true });
-    return false;
-  }
+  });
+  if (first) await adjustStock(fromDoc(d).lines, -1);
+  return true;
 }
 
-/** Refreshes refund/fee data of the order paid with this PaymentIntent. */
-export async function refreshOrderByPaymentIntent(paymentIntentId: string) {
-  const s = stripe();
+/** Looks up our order by the Revolut order id (used by the webhook). */
+export async function confirmByPaymentId(paymentId: string): Promise<boolean> {
   const db = firestore();
-  if (!s || !db) return;
-  const snap = await db.collection(ORDERS).where("paymentIntent", "==", paymentIntentId).limit(1).get();
+  if (!db) return false;
+  const snap = await db.collection(ORDERS).where("paymentId", "==", paymentId).limit(1).get();
   const id = snap.docs[0]?.id;
-  if (id) await recordPaidSession(id);
-}
-
-/** Imports paid Stripe orders that are not in Firestore yet; keeps shipping status of existing ones. */
-export async function syncOrdersFromStripe(): Promise<number> {
-  const db = firestore();
-  if (!db) return 0;
-  const existing = new Set((await db.collection(ORDERS).select().get()).docs.map((d) => d.id));
-  let added = 0;
-  for (const order of await stripeOrders()) {
-    if (existing.has(order.id)) continue;
-    await db.collection(ORDERS).doc(order.id).set({ ...toDoc(order), shippedAt: order.shippedAt });
-    added++;
-  }
-  return added;
+  return id ? confirmOrder(id) : false;
 }
 
 export async function setOrderShipped(orderId: string, shipped: boolean) {
@@ -352,13 +311,29 @@ export async function setOrderShipped(orderId: string, shipped: boolean) {
   return true;
 }
 
+export async function setOrderRefunded(orderId: string, refunded: boolean) {
+  const db = firestore();
+  if (!db) return false;
+  const ref = db.collection(ORDERS).doc(orderId);
+  const snap = await ref.get();
+  if (!snap.exists) return false;
+  const d = snap.data() as OrderDoc;
+  if (d.status !== "paid" || (d.refunded >= d.total) === refunded) return false;
+  await ref.update({ refunded: refunded ? d.total : 0, updatedAt: Date.now() });
+  await adjustStock(fromDoc(d).lines, refunded ? 1 : -1);
+  return true;
+}
+
 export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => {
   const db = firestore();
-  if (!db) return stripeOrders(sinceUnix);
+  if (!db) return [];
   let q = db.collection(ORDERS).orderBy("created", "desc");
   if (sinceUnix) q = q.where("created", ">=", sinceUnix);
   const snap = await q.get();
-  return snap.docs.map((d) => fromDoc(d.data() as OrderDoc));
+  return snap.docs
+    .map((d) => ({ ...(d.data() as OrderDoc), id: d.id }))
+    .filter((d) => d.status !== "pending")
+    .map(fromDoc);
 });
 
 /** Shopify-style order numbers: #1001 for the first paid order, counting up by date. */

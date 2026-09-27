@@ -2,7 +2,8 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { firebaseConfigured } from "@/lib/firebase";
-import { listOrders, stripe } from "@/lib/shop";
+import { revolutConfigured } from "@/lib/revolut";
+import { listOrders } from "@/lib/shop";
 import { logoutAction } from "../actions";
 import { NavLinks } from "./nav-links";
 
@@ -19,7 +20,7 @@ function Brand({ className }: { className: string }) {
 
 export default async function Panel({ children }: { children: ReactNode }) {
   await requireAdmin();
-  const openOrders = stripe()
+  const openOrders = firebaseConfigured()
     ? (await listOrders().catch(() => [])).filter((o) => !o.shippedAt && o.refunded < o.total)
         .length
     : 0;
@@ -43,16 +44,10 @@ export default async function Panel({ children }: { children: ReactNode }) {
               Vercel om producten en foto&apos;s op te slaan.
             </p>
           )}
-          {!stripe() && (
+          {!revolutConfigured() && (
             <p className="admin-banner">
-              Stripe is nog niet gekoppeld. Zet <code>STRIPE_SECRET_KEY</code> in
+              Revolut is nog niet gekoppeld. Zet <code>REVOLUT_SECRET_KEY</code> in
               Vercel om betalingen en bestellingen te ontvangen.
-            </p>
-          )}
-          {stripe() && !process.env.STRIPE_WEBHOOK_SECRET && (
-            <p className="admin-banner">
-              <code>STRIPE_WEBHOOK_SECRET</code> ontbreekt: de voorraad daalt niet
-              automatisch na een bestelling.
             </p>
           )}
           {children}

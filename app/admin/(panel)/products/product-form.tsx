@@ -74,7 +74,7 @@ export function ProductForm({
                 <b>{parse(cost) && priceExVat > 0 ? `${Math.round((margin / priceExVat) * 100)}%` : "—"}</b>
               </div>
             </div>
-            <p className="admin-note">Winst en marge excl. btw, vóór Stripe-kosten.</p>
+            <p className="admin-note">Winst en marge excl. btw, vóór betaalkosten.</p>
           </section>
 
           <section className="admin-section">

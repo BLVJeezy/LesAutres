@@ -2,8 +2,10 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
 import { firebaseConfigured } from "@/lib/firebase";
-import { listOrders, orderNumbers, orderStatus, stripe } from "@/lib/shop";
-import { syncOrdersAction } from "../../actions";
+import { revolutConfigured } from "@/lib/revolut";
+import { getSetting } from "@/lib/settings";
+import { listOrders, orderNumbers, orderStatus } from "@/lib/shop";
+import { setupRevolutWebhookAction } from "../../actions";
 import { STATUS_BADGE } from "./status";
 import { OrderRow } from "./order-row";
 
@@ -19,6 +21,7 @@ export default async function Orders({
   const { status: raw } = await searchParams;
   const filter: Filter = raw && raw in FILTERS ? (raw as Filter) : "all";
   const orders = await listOrders();
+  const webhook = await getSetting("revolutWebhookUrl").catch(() => undefined);
   const numbers = orderNumbers(orders);
   const shown = filter === "all" ? orders : orders.filter((o) => orderStatus(o) === filter);
 
@@ -26,9 +29,9 @@ export default async function Orders({
     <>
       <div className="admin-head">
         <h1>Bestellingen</h1>
-        {firebaseConfigured() && stripe() && (
-          <form action={syncOrdersAction}>
-            <button className="admin-btn secondary">Synchroniseer met Stripe</button>
+        {firebaseConfigured() && revolutConfigured() && !webhook && (
+          <form action={setupRevolutWebhookAction}>
+            <button className="admin-btn">Revolut-webhook instellen</button>
           </form>
         )}
       </div>

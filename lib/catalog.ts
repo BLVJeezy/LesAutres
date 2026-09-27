@@ -95,7 +95,7 @@ export function addItem(
   return [...cart, { ...item, quantity: Math.min(item.quantity, available) }];
 }
 
-/** Shown when Stripe is not configured, so the storefront still renders. */
+/** Shown when no products are live yet, so the storefront still renders. */
 export const previewProduct: ShopProduct = {
   id: "preview-baddies-tee",
   name: "The Baddies Tee",

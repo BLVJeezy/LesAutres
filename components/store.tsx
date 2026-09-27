@@ -35,7 +35,7 @@ import {
   type CartItem,
   type ShopProduct,
 } from "@/lib/catalog";
-import { onSubscribe, onCheckout, trackEvent } from "@/lib/integrations";
+import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
 import { ShotCarousel } from "./shot-carousel";
 import { AnthemVideo } from "./anthem-video";
@@ -179,6 +179,71 @@ const photos = [
     alt: "Close-up van de BADDIES IN BELGICA print",
   },
 ];
+const COUNTRIES: [string, string][] = [
+  ["BE", "België"],
+  ["NL", "Nederland"],
+  ["LU", "Luxemburg"],
+  ["FR", "Frankrijk"],
+  ["DE", "Duitsland"],
+  ["ES", "Spanje"],
+];
+const CUSTOMER_KEY = "la-customer";
+
+function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Customer) => void }) {
+  const [c, setC] = useState<Customer>(() => {
+    try {
+      return { ...EMPTY_CUSTOMER, ...JSON.parse(localStorage.getItem(CUSTOMER_KEY) ?? "{}") };
+    } catch {
+      return EMPTY_CUSTOMER;
+    }
+  });
+  const field = (key: keyof Customer, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
+    <label className="checkout-field">
+      <span>{label}</span>
+      <input
+        value={c[key]}
+        onChange={(e) => setC({ ...c, [key]: e.target.value })}
+        required={!props.placeholder}
+        {...props}
+      />
+    </label>
+  );
+  return (
+    <form
+      className="checkout-form"
+      onSubmit={(e) => {
+        e.preventDefault();
+        try {
+          localStorage.setItem(CUSTOMER_KEY, JSON.stringify(c));
+        } catch {}
+        onSubmit(c);
+      }}
+    >
+      <span className="micro">02 — VERZENDING</span>
+      {field("name", "Naam", { autoComplete: "name", maxLength: 120 })}
+      {field("email", "E-mail", { type: "email", autoComplete: "email", maxLength: 254 })}
+      {field("phone", "Telefoon (optioneel)", { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+32 …" })}
+      {field("street", "Straat en nummer", { autoComplete: "address-line1", maxLength: 200 })}
+      <div className="checkout-row">
+        {field("postcode", "Postcode", { autoComplete: "postal-code", maxLength: 12 })}
+        {field("city", "Gemeente", { autoComplete: "address-level2", maxLength: 80 })}
+      </div>
+      <label className="checkout-field">
+        <span>Land</span>
+        <select value={c.country} onChange={(e) => setC({ ...c, country: e.target.value })} autoComplete="country">
+          {COUNTRIES.map(([code, name]) => (
+            <option key={code} value={code}>{name}</option>
+          ))}
+        </select>
+      </label>
+      <button className="buy" disabled={busy}>
+        {busy ? "EVEN GEDULD…" : "BETAAL MET REVOLUT"}
+        <ArrowUpRight size={20} />
+      </button>
+    </form>
+  );
+}
+
 function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
   const [index, setIndex] = useState(0);
   const track = useRef<HTMLDivElement>(null);
@@ -290,6 +355,7 @@ export default function Store({
   const [waitSize, setWaitSize] = useState<Size>();
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [checkoutStep, setCheckoutStep] = useState(false);
   const [consent, setConsent] = useState<string | null>("loading");
   const [webgl, setWebgl] = useState(false);
   const [shirtFailed, setShirtFailed] = useState(false);
@@ -896,26 +962,29 @@ export default function Store({
                 <b>{money(total)}</b>
               </div>
               <p className="tiny">
-                Inclusief btw · verzendkosten worden vóór betaling getoond.
+                Inclusief btw · veilig betalen via Revolut.
               </p>
-              <button
-                className="buy"
-                disabled={busy}
-                onClick={async () => {
-                  setBusy(true);
-                  setError("");
-                  try {
-                    await onCheckout(cart);
-                  } catch (e) {
-                    setError((e as Error).message);
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-              >
-                {busy ? "EVEN GEDULD…" : "NAAR CHECKOUT"}
-                <ArrowUpRight size={20} />
-              </button>
+              {checkoutStep ? (
+                <CheckoutForm
+                  busy={busy}
+                  onSubmit={async (customer) => {
+                    setBusy(true);
+                    setError("");
+                    try {
+                      await onCheckout(cart, customer);
+                    } catch (e) {
+                      setError((e as Error).message);
+                    } finally {
+                      setBusy(false);
+                    }
+                  }}
+                />
+              ) : (
+                <button className="buy" onClick={() => setCheckoutStep(true)}>
+                  NAAR CHECKOUT
+                  <ArrowUpRight size={20} />
+                </button>
+              )}
               <p role="status" className="form-status">
                 {error}
               </p>

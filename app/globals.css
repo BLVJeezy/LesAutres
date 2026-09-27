@@ -1815,3 +1815,48 @@ footer {
 .gallery-dots button[aria-current]::before {
   background: #fff;
 }
+
+/* Checkout form */
+.checkout-form {
+  display: grid;
+  gap: 12px;
+  margin-top: 8px;
+}
+.checkout-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.checkout-field span {
+  font: 9px monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #a1a58f;
+}
+.checkout-field input,
+.checkout-field select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  background: transparent;
+  color: inherit;
+  font: 16px/1 inherit;
+  border: 1px solid #777c7066;
+  border-radius: 2px;
+}
+.checkout-field select option {
+  color: #111;
+}
+.checkout-field input:focus,
+.checkout-field select:focus {
+  outline: none;
+  border-color: var(--pink);
+}
+.checkout-row {
+  display: grid;
+  grid-template-columns: 2fr 3fr;
+  gap: 10px;
+}
+.checkout-form .buy {
+  margin-top: 6px;
+}
