@@ -38,6 +38,7 @@ import {
 import { onSubscribe, onCheckout, trackEvent } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
 import { ShotCarousel } from "./shot-carousel";
+import { AnthemVideo } from "./anthem-video";
 const Scene = dynamic(() => import("./scene"), { ssr: false });
 class SceneBoundary extends Component<
   { children: ReactNode; fallback: ReactNode },
@@ -599,6 +600,25 @@ export default function Store({
                 </details>
               ))}
             </div>
+          </div>
+        </section>
+        <section className="anthem" id="anthem">
+          <AnthemVideo />
+          <div className="anthem-copy">
+            <span className="micro">THE ANTHEM</span>
+            <h2>
+              BADDIES IN
+              <br />
+              <span>BELGICA.</span>
+            </h2>
+            <p>
+              Het nummer achter de print. Belgica, Hollanda, Fransa, Espagna —
+              zet je geluid aan.
+            </p>
+            <a href="#drop" className="buy">
+              <span>SHOP THE TEE — {money(price)}</span>
+              <ArrowUpRight size={20} />
+            </a>
           </div>
         </section>
         {products.length > 1 && (
