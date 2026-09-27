@@ -1,6 +1,6 @@
 /** Delivery options. Fees in cents incl. VAT; standard carriers are free from FREE_FROM. */
 export const FREE_FROM = 5000;
-export const STANDARD_FEE = 495;
+export const STANDARD_FEE = 595;
 
 export const SHIPPING_OPTIONS = [
   { id: "bpost", label: "bpost", note: "1–3 werkdagen in België" },
