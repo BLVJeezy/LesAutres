@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import {
   emptyStock,
+  MAX_IMAGES,
   parseStock,
   previewProduct,
   sizes,
@@ -30,6 +31,26 @@ export function stripe(): Stripe | null {
   return client;
 }
 
+/** Images live in metadata (img_0…img_7) so relative paths work; Stripe's own list only takes https. */
+function imagesOf(p: Stripe.Product): string[] {
+  const fromMeta = Array.from({ length: MAX_IMAGES }, (_, i) => p.metadata[`img_${i}`]).filter(
+    (u): u is string => Boolean(u),
+  );
+  return fromMeta.length ? fromMeta : p.images;
+}
+
+/** On update, empty values delete the unused slots; on create they are left out. */
+function imageMetadata(images: string[], forCreate = false) {
+  return Object.fromEntries(
+    Array.from({ length: MAX_IMAGES }, (_, i) => [`img_${i}`, images[i] ?? ""]).filter(
+      ([, v]) => !forCreate || v,
+    ),
+  );
+}
+
+const stripeImages = (images: string[]) =>
+  images.filter((u) => u.startsWith("https://")).slice(0, MAX_IMAGES);
+
 function toShopProduct(p: Stripe.Product): ShopProduct {
   const price = p.default_price as Stripe.Price | null;
   return {
@@ -38,7 +59,8 @@ function toShopProduct(p: Stripe.Product): ShopProduct {
     description: p.description ?? "",
     price: price?.unit_amount ?? 0,
     cost: Math.max(0, Number(p.metadata.cost) || 0),
-    image: p.images[0] ?? "",
+    image: imagesOf(p)[0] ?? "",
+    images: imagesOf(p),
     stock: parseStock(p.metadata.stock),
     active: p.active,
     order: Number(p.metadata.order) || 0,
@@ -88,13 +110,14 @@ export async function ensureSeedProduct() {
     {
       name: draftProduct.name,
       description: draftProduct.description,
-      images: [draftProduct.image],
+      images: stripeImages(draftProduct.images),
       active: false,
       metadata: {
         shop: SHOP_TAG,
         cost: "0",
         stock: JSON.stringify(draftProduct.stock),
         order: "0",
+        ...imageMetadata(draftProduct.images, true),
       },
       default_price_data: { currency: "eur", unit_amount: draftProduct.price },
     },
@@ -116,18 +139,19 @@ export type ProductInput = {
   description: string;
   price: number;
   cost: number;
-  image: string;
+  images: string[];
   stock: Record<Size, number>;
   active: boolean;
   order: number;
 };
 
-function metadataFor(input: ProductInput) {
+function metadataFor(input: ProductInput, forCreate = false) {
   return {
     shop: SHOP_TAG,
     cost: String(input.cost),
     stock: JSON.stringify(input.stock),
     order: String(input.order),
+    ...imageMetadata(input.images, forCreate),
   };
 }
 
@@ -137,9 +161,9 @@ export async function createProduct(input: ProductInput): Promise<string> {
   const product = await s.products.create({
     name: input.name,
     description: input.description || undefined,
-    images: input.image ? [input.image] : [],
+    images: stripeImages(input.images),
     active: input.active,
-    metadata: metadataFor(input),
+    metadata: metadataFor(input, true),
     default_price_data: { currency: "eur", unit_amount: input.price },
   });
   return product.id;
@@ -163,7 +187,7 @@ export async function updateProduct(id: string, input: ProductInput) {
   await s.products.update(id, {
     name: input.name,
     description: input.description || "",
-    images: input.image ? [input.image] : [],
+    images: stripeImages(input.images),
     active: input.active,
     metadata: metadataFor(input),
     ...(defaultPrice ? { default_price: defaultPrice } : {}),
