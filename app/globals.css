@@ -1993,3 +1993,57 @@ footer {
   margin: 0;
   line-height: 1.5;
 }
+
+/* Shipping options */
+.shipping-options {
+  display: grid;
+  gap: 8px;
+  border: 0;
+  padding: 0;
+  margin: 10px 0 0;
+}
+.shipping-options legend {
+  margin-bottom: 10px;
+}
+.shipping-options label {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 10px 14px;
+  border: 1px solid #777c7066;
+  border-radius: 2px;
+  cursor: pointer;
+}
+.shipping-options label.active {
+  border-color: var(--pink);
+  background: var(--accent-dim);
+}
+.shipping-options input {
+  accent-color: var(--pink);
+  margin: 0;
+}
+.shipping-options span {
+  display: grid;
+  gap: 3px;
+}
+.shipping-options b {
+  font-size: 13px;
+}
+.shipping-options small {
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.shipping-options em {
+  font: 12px monospace;
+  font-style: normal;
+  white-space: nowrap;
+}
+.checkout-total {
+  margin: 14px 0 4px;
+}
+.thanks-ship {
+  margin: 18px 0 -24px;
+  color: var(--text-dim);
+}

@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { randomBytes } from "node:crypto";
+import { shippingFee, shippingLabel, type ShippingId } from "./shipping";
 import { customerEmail, mailConfigured, sendMail, shopEmail, type MailLine } from "./mail";
 import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
 import { firestore } from "./firebase";
@@ -172,6 +173,9 @@ export type Order = {
   phone: string;
   address: string;
   lines: OrderLine[];
+  /** Delivery method id (bpost, gls, ups, ceo) and its fee in cents; included in total. */
+  shippingMethod: string;
+  shippingFee: number;
   total: number;
   refunded: number;
   fee: number;
@@ -207,6 +211,8 @@ function fromDoc(d: OrderDoc): Order {
     phone: d.phone ?? "",
     address: d.address ?? "",
     lines,
+    shippingMethod: d.shippingMethod ?? "",
+    shippingFee: d.shippingFee ?? 0,
     total: d.total ?? 0,
     refunded: d.refunded ?? 0,
     fee,
@@ -221,6 +227,7 @@ export type Checkout = {
   lines: OrderLine[];
   customer: NewOrder["customer"];
   shipping: NewOrder["shipping"];
+  shippingMethod: ShippingId;
   description: string;
   origin: string;
 };
@@ -230,7 +237,9 @@ export async function startCheckout(c: Checkout): Promise<string> {
   const db = firestore();
   if (!db) throw new Error("Firebase is niet geconfigureerd.");
   const id = `LA-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
-  const total = c.lines.reduce((n, l) => n + l[2] * l[3], 0);
+  const subtotal = c.lines.reduce((n, l) => n + l[2] * l[3], 0);
+  const fee = shippingFee(c.shippingMethod, subtotal);
+  const total = subtotal + fee;
   const s = c.shipping;
   const doc: OrderDoc = {
     id,
@@ -242,6 +251,8 @@ export async function startCheckout(c: Checkout): Promise<string> {
     phone: c.customer.phone ?? "",
     address: [s.street_line_1, s.street_line_2, `${s.postcode} ${s.city}`, s.country_code].filter(Boolean).join(", "),
     lines: c.lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
+    shippingMethod: c.shippingMethod,
+    shippingFee: fee,
     total,
     refunded: 0,
     fee: 0,
@@ -255,7 +266,7 @@ export async function startCheckout(c: Checkout): Promise<string> {
   const order = await createRevolutOrder({
     amount: total,
     reference: id,
-    description: c.description,
+    description: `${c.description} · Verzending: ${shippingLabel(c.shippingMethod)}`,
     redirectUrl: `${c.origin}/bedankt?order=${id}`,
     customer: c.customer,
     shipping: c.shipping,

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { money } from "@/lib/catalog";
+import { shippingLabel } from "@/lib/shipping";
 import { confirmOrder, orderSummary } from "@/lib/shop";
 import { ClearCart } from "./clear-cart";
 
@@ -59,6 +60,10 @@ export default async function Bedankt({
               </li>
             ))}
           </ul>
+          <p className="thanks-total thanks-ship">
+            <span>VERZENDING · {shippingLabel(summary.order.shippingMethod).toUpperCase()}</span>
+            <span>{summary.order.shippingFee ? money(summary.order.shippingFee) : "Gratis"}</span>
+          </p>
           <p className="thanks-total">
             <span>TOTAAL</span>
             <b>{money(summary.order.total)}</b>
