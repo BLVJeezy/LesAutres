@@ -5,11 +5,25 @@ import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop
 import { demoOrders } from "@/lib/demo";
 import { SalesChart, type Day } from "./sales-chart";
 
-const PERIODS = { "7": "7 dagen", "30": "30 dagen", "90": "90 dagen", all: "Alles" } as const;
+const PERIODS = { today: "Vandaag", "48h": "48 uur", "7": "7 dagen", "30": "30 dagen", "90": "90 dagen", all: "Alles" } as const;
 type Period = keyof typeof PERIODS;
+const PERIOD_ORDER: Period[] = ["today", "48h", "7", "30", "90", "all"];
 const TZ = "Europe/Brussels";
 const dayKey = (unix: number) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date(unix * 1000));
+const hourKey = (unix: number) =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", hourCycle: "h23" }).format(new Date(unix * 1000));
+const hourLabel = (unix: number) =>
+  `${new Intl.DateTimeFormat("nl-BE", { timeZone: TZ, hour: "2-digit", hourCycle: "h23" }).format(new Date(unix * 1000))}u`;
+/** Unix time of 00:00 Brussels on the given YYYY-MM-DD. */
+function midnight(key: string) {
+  const utc = Date.parse(`${key}T00:00:00Z`);
+  const d = new Date(utc);
+  const offset =
+    Date.parse(d.toLocaleString("en-US", { timeZone: TZ })) - Date.parse(d.toLocaleString("en-US", { timeZone: "UTC" }));
+  return Math.floor((utc - offset) / 1000);
+}
+const isDate = (v: string | undefined): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v));
 const dayLabel = (key: string) =>
   new Intl.DateTimeFormat("nl-BE", { day: "numeric", month: "short", timeZone: "UTC" }).format(
     new Date(`${key}T00:00:00Z`),
@@ -18,19 +32,32 @@ const dayLabel = (key: string) =>
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string; demo?: string }>;
+  searchParams: Promise<{ period?: string; demo?: string; from?: string; to?: string }>;
 }) {
   await requireAdmin();
-  const { period: raw, demo: demoParam } = await searchParams;
+  const { period: raw, demo: demoParam, from: rawFrom, to: rawTo } = await searchParams;
   const demo = demoParam === "1";
-  const period: Period = raw && raw in PERIODS ? (raw as Period) : "30";
   const now = Math.floor(Date.now() / 1000);
-  const since = period === "all" ? undefined : now - Number(period) * 86400;
+  const custom = raw === "custom" && isDate(rawFrom) && isDate(rawTo);
+  const period: Period | "custom" = custom ? "custom" : raw && raw in PERIODS ? (raw as Period) : "30";
+  const [fromKey, toKey] = custom ? [rawFrom!, rawTo!].sort() : [dayKey(now - 29 * 86400), dayKey(now)];
+  const since =
+    period === "custom"
+      ? midnight(fromKey)
+      : period === "all"
+        ? undefined
+        : period === "today"
+          ? midnight(dayKey(now))
+          : period === "48h"
+            ? now - 48 * 3600
+            : now - Number(period) * 86400;
+  const until = period === "custom" ? midnight(toKey) + 86400 : now + 1;
+  const extra = demo ? "&demo=1" : "";
   const [realOrders, products] = await Promise.all([listOrders(), adminProducts()]);
   const allOrders = demo
     ? demoOrders(products[0]?.id ?? "baddies-tee", products[0]?.price || 4495, products[0]?.cost || 900, now)
     : realOrders;
-  const orders = since ? allOrders.filter((o) => o.created >= since) : allOrders;
+  const orders = allOrders.filter((o) => (since === undefined || o.created >= since) && o.created < until);
   const numbers = orderNumbers(allOrders);
 
   const sum = (f: (o: (typeof orders)[number]) => number) => orders.reduce((n, o) => n + f(o), 0);
@@ -42,17 +69,25 @@ export default async function Dashboard({
   const units = sum((o) => o.lines.reduce((n, l) => n + l[2], 0));
   const open = allOrders.filter((o) => orderStatus(o) === "open");
 
-  const spanDays =
-    period === "all"
-      ? Math.min(365, Math.max(7, Math.ceil((now - Math.min(now, ...orders.map((o) => o.created))) / 86400) + 1))
-      : Number(period);
   const buckets = new Map<string, Day>();
-  for (let i = spanDays - 1; i >= 0; i--) {
-    const key = dayKey(now - i * 86400);
-    buckets.set(key, { date: key, label: dayLabel(key), revenue: 0, orders: 0 });
+  const hourly = period === "today" || period === "48h" || (period === "custom" && fromKey === toKey);
+  if (hourly) {
+    const start = since ?? now;
+    const stop = period === "48h" ? now + 1 : start + 86400;
+    for (let t = start - (start % 3600); t < stop; t += 3600)
+      buckets.set(hourKey(t), { date: hourKey(t), label: hourLabel(t), revenue: 0, orders: 0 });
+  } else {
+    const end = Math.min(until - 1, now);
+    const first =
+      since ?? Math.max(end - 364 * 86400, Math.min(end - 6 * 86400, ...orders.map((o) => o.created)));
+    const spanDays = Math.min(366, Math.floor((midnight(dayKey(end)) - midnight(dayKey(first))) / 86400) + 1);
+    for (let i = spanDays - 1; i >= 0; i--) {
+      const key = dayKey(end - i * 86400);
+      buckets.set(key, { date: key, label: dayLabel(key), revenue: 0, orders: 0 });
+    }
   }
   for (const o of orders) {
-    const b = buckets.get(dayKey(o.created));
+    const b = buckets.get(hourly ? hourKey(o.created) : dayKey(o.created));
     if (b) {
       b.revenue += o.total - o.refunded;
       b.orders += 1;
@@ -89,22 +124,30 @@ export default async function Dashboard({
       <div className="admin-head">
         <h1>Home {demo && <span className="badge attention">TESTMODUS</span>}</h1>
         <nav className="admin-tabs" aria-label="Periode">
-          {(Object.keys(PERIODS) as Period[]).map((p) => (
-            <Link key={p} href={`/admin?period=${p}${demo ? "&demo=1" : ""}`} aria-current={p === period ? "page" : undefined}>
+          {PERIOD_ORDER.map((p) => (
+            <Link key={p} href={`/admin?period=${p}${extra}`} aria-current={p === period ? "page" : undefined}>
               {PERIODS[p]}
             </Link>
           ))}
         </nav>
+        <form className="admin-daterange" action="/admin">
+          <input type="hidden" name="period" value="custom" />
+          {demo && <input type="hidden" name="demo" value="1" />}
+          <input type="date" name="from" defaultValue={fromKey} max={dayKey(now)} aria-label="Van" required />
+          <span>–</span>
+          <input type="date" name="to" defaultValue={period === "custom" ? toKey : dayKey(now)} max={dayKey(now)} aria-label="Tot en met" required />
+          <button className={`admin-btn ${period === "custom" ? "" : "secondary"}`}>Toepassen</button>
+        </form>
       </div>
 
       <p className={demo ? "admin-banner" : "admin-note"}>
         {demo ? (
           <>
             Testmodus: voorbeeldcijfers van een webshop met gemiddeld € 10k–30k winst per maand. Dit zijn géén
-            echte bestellingen. <Link href={`/admin?period=${period}`}>Terug naar echte cijfers →</Link>
+            echte bestellingen. <Link href={`/admin?period=${period}${period === "custom" ? `&from=${fromKey}&to=${toKey}` : ""}`}>Terug naar echte cijfers →</Link>
           </>
         ) : (
-          <Link href={`/admin?period=${period}&demo=1`}>Testmodus aanzetten →</Link>
+          <Link href={`/admin?period=${period}${period === "custom" ? `&from=${fromKey}&to=${toKey}` : ""}&demo=1`}>Testmodus aanzetten →</Link>
         )}
       </p>
 
@@ -119,7 +162,7 @@ export default async function Dashboard({
           ))}
         </div>
         <div className="admin-card-body">
-          <h2 style={{ marginBottom: 8 }}>Omzet per dag</h2>
+          <h2 style={{ marginBottom: 8 }}>{hourly ? "Omzet per uur" : "Omzet per dag"}</h2>
           <SalesChart days={[...buckets.values()]} />
         </div>
       </section>
