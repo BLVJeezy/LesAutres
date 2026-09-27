@@ -3,6 +3,8 @@ import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import { MAX_IMAGES } from "@/lib/catalog";
 
+const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+
 export function ImageManager({
   initial,
   canUpload,
@@ -11,7 +13,6 @@ export function ImageManager({
   canUpload: boolean;
 }) {
   const [images, setImages] = useState(initial);
-  const [link, setLink] = useState("");
   const [busy, setBusy] = useState(0);
   const [error, setError] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
@@ -24,6 +25,9 @@ export function ImageManager({
     setBusy((n) => n + list.length);
     for (const file of list) {
       try {
+        if (!ACCEPTED.includes(file.type))
+          throw new Error("gebruik een JPG-, PNG- of WEBP-foto");
+        if (file.size > 10 * 1024 * 1024) throw new Error("foto is groter dan 10 MB");
         const safeName = file.name.toLowerCase().replace(/[^a-z0-9.\-]+/g, "-");
         const blob = await upload(`products/${safeName}`, file, {
           access: "public",
@@ -32,23 +36,12 @@ export function ImageManager({
         });
         setImages((prev) => (prev.length < MAX_IMAGES ? [...prev, blob.url] : prev));
       } catch (e) {
-        setError(`Uploaden van ${file.name} mislukt: ${(e as Error).message}`);
+        setError(`${file.name}: ${(e as Error).message}`);
       } finally {
         setBusy((n) => n - 1);
       }
     }
     if (fileInput.current) fileInput.current.value = "";
-  }
-
-  function addLink() {
-    const url = link.trim();
-    if (!/^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/.test(url)) {
-      setError("Gebruik een pad zoals /images/foto.jpg of een https-link.");
-      return;
-    }
-    setError("");
-    setImages((prev) => [...prev, url]);
-    setLink("");
   }
 
   const move = (i: number) =>
@@ -60,7 +53,7 @@ export function ImageManager({
 
   return (
     <fieldset>
-      <legend>Afbeeldingen ({images.length}/{MAX_IMAGES}) — de eerste is de hoofdfoto</legend>
+      <legend>Foto&apos;s ({images.length}/{MAX_IMAGES}) — de eerste is de hoofdfoto</legend>
       <input type="hidden" name="images" value={JSON.stringify(images)} />
       <div className="admin-images">
         {images.map((src, i) => (
@@ -70,7 +63,7 @@ export function ImageManager({
             {i === 0 && <span className="admin-badge">Hoofdfoto</span>}
             <div>
               {i > 0 && (
-                <button type="button" onClick={() => move(i)} aria-label="Naar voren">←</button>
+                <button type="button" onClick={() => move(i)} aria-label="Maak eerder / hoofdfoto">←</button>
               )}
               <button
                 type="button"
@@ -85,43 +78,25 @@ export function ImageManager({
         {Array.from({ length: busy }, (_, i) => (
           <figure key={`busy-${i}`} className="uploading">Uploaden…</figure>
         ))}
-      </div>
-      <div className="admin-row">
-        {canUpload ? (
-          <label className="admin-btn small admin-upload">
-            + Foto&apos;s uploaden
+        {canUpload && !full && (
+          <label className="admin-add-photo">
+            <span aria-hidden>+</span>
+            Foto toevoegen
             <input
               ref={fileInput}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/avif"
+              accept="image/*"
               multiple
-              disabled={full || busy > 0}
               onChange={(e) => onFiles(e.target.files)}
             />
           </label>
-        ) : (
-          <p className="admin-note">
-            Uploaden kan zodra Vercel Blob gekoppeld is. Tot dan kun je een link toevoegen.
-          </p>
         )}
-        <div className="admin-link-add">
-          <input
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addLink();
-              }
-            }}
-            placeholder="/images/foto.jpg of https://…"
-            disabled={full}
-          />
-          <button type="button" className="admin-btn small" onClick={addLink} disabled={full || !link}>
-            Link toevoegen
-          </button>
-        </div>
       </div>
+      {!canUpload && (
+        <p className="admin-note">
+          Foto&apos;s uploaden kan zodra de Blob-opslag in Vercel gekoppeld is.
+        </p>
+      )}
       {error && <p className="admin-alert">{error}</p>}
     </fieldset>
   );

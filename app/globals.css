@@ -2497,3 +2497,33 @@ footer {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+.admin-add-photo {
+  position: relative;
+  aspect-ratio: 1;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px !important;
+  border: 1px dashed var(--text-dim);
+  border-radius: 4px;
+  color: var(--text) !important;
+  font-size: 12px !important;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.admin-add-photo span {
+  font-size: 28px;
+  line-height: 1;
+}
+.admin-add-photo:hover {
+  border-color: var(--accent);
+  color: var(--accent) !important;
+}
+.admin-add-photo input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
