@@ -10,59 +10,98 @@ export const colors = [
   },
 ] as const;
 export type Colorway = (typeof colors)[number];
-export const price = 65; // Preview price. Replace with approved catalogue before launch.
-export const money = (value: number) =>
+
+export const VAT_RATE = 0.21;
+export const MAX_CART_LINES = 10;
+
+export type ShopProduct = {
+  id: string;
+  name: string;
+  description: string;
+  /** Price per unit in cents, incl. VAT. */
+  price: number;
+  /** Purchase cost per unit in cents, excl. VAT. Server/admin only; 0 on the storefront. */
+  cost: number;
+  image: string;
+  stock: Record<Size, number>;
+  active: boolean;
+  order: number;
+};
+
+export type CartItem = { productId: string; size: Size; quantity: number };
+
+export const money = (cents: number) =>
   new Intl.NumberFormat("nl-BE", {
     style: "currency",
     currency: "EUR",
     maximumFractionDigits: 2,
-  }).format(value);
-export function availability(
-  color: string,
-  size: Size,
-): {
-  kind: "stock" | "preorder" | "soldout";
-  quantity: number;
-  shipping?: string;
-} {
-  // Deliberately labeled preview data in the UI. Replace with authoritative server inventory.
-  if (size === "XS" || size === "XXL") return { kind: "soldout", quantity: 0 };
-  if (size === "XL")
-    return {
-      kind: "preorder",
-      quantity: 20,
-      shipping: "Verzenddatum wordt bevestigd vóór de lancering",
-    };
-  return {
-    kind: "stock",
-    quantity: color === "white-black" && size === "M" ? 3 : 8,
-  };
+  }).format(cents / 100);
+
+export function emptyStock(): Record<Size, number> {
+  return Object.fromEntries(sizes.map((s) => [s, 0])) as Record<Size, number>;
 }
-export type CartItem = { color: string; size: Size; quantity: number };
-export function addItem(cart: CartItem[], item: CartItem): CartItem[] {
+
+export function parseStock(raw: string | undefined): Record<Size, number> {
+  const stock = emptyStock();
+  if (!raw) return stock;
+  try {
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    for (const s of sizes) {
+      const n = Number(data[s]);
+      if (Number.isInteger(n) && n > 0) stock[s] = n;
+    }
+  } catch {}
+  return stock;
+}
+
+export const totalStock = (p: ShopProduct) =>
+  sizes.reduce((n, s) => n + p.stock[s], 0);
+
+export function stockFor(
+  products: ShopProduct[],
+  productId: string,
+  size: Size,
+): number {
+  const product = products.find((p) => p.id === productId && p.active);
+  return product ? product.stock[size] : 0;
+}
+
+export function addItem(
+  cart: CartItem[],
+  item: CartItem,
+  products: ShopProduct[],
+): CartItem[] {
   if (
     !sizes.includes(item.size) ||
     !Number.isInteger(item.quantity) ||
     item.quantity <= 0
   )
     return cart;
-  const stock = availability(item.color, item.size);
-  if (stock.kind === "soldout" || !colors.some((c) => c.id === item.color))
-    return cart;
+  const available = stockFor(products, item.productId, item.size);
+  if (available <= 0) return cart;
   const existing = cart.find(
-    (c) => c.color === item.color && c.size === item.size,
+    (c) => c.productId === item.productId && c.size === item.size,
   );
   if (existing)
     return cart.map((c) =>
       c === existing
-        ? {
-            ...c,
-            quantity: Math.min(c.quantity + item.quantity, stock.quantity),
-          }
+        ? { ...c, quantity: Math.min(c.quantity + item.quantity, available) }
         : c,
     );
-  return [
-    ...cart,
-    { ...item, quantity: Math.min(item.quantity, stock.quantity) },
-  ];
+  if (cart.length >= MAX_CART_LINES) return cart;
+  return [...cart, { ...item, quantity: Math.min(item.quantity, available) }];
 }
+
+/** Shown when Stripe is not configured, so the storefront still renders. */
+export const previewProduct: ShopProduct = {
+  id: "preview-baddies-tee",
+  name: "The Baddies Tee",
+  description:
+    "Geen grenzen. Geen uitleg nodig.\nEén statement, vier landen. Voor de anderen.",
+  price: 6500,
+  cost: 0,
+  image: "/images/drop-001-product.jpeg",
+  stock: { XS: 0, S: 8, M: 3, L: 8, XL: 8, XXL: 0 },
+  active: true,
+  order: 0,
+};
