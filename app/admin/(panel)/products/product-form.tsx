@@ -47,7 +47,7 @@ export function ProductForm({ product }: { product: ShopProduct }) {
           {sizes.map((s) => (
             <label key={s}>
               {s}
-              <input name={`stock_${s}`} type="number" min={0} step={1} defaultValue={product.stock[s]} />
+              <input name={`stock_${s}`} type="number" min={0} step={1} defaultValue={product.stock[s] || ""} placeholder="0" />
             </label>
           ))}
         </div>
