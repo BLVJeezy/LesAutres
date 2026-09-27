@@ -229,7 +229,8 @@ function CheckoutForm({ busy, onSubmit }: { busy: boolean; onSubmit: (c: Custome
       </label>
       <p className="tiny checkout-legal">
         Verzending {company.shippingCost} · verzonden {company.dispatchTime} · 14 dagen herroepingsrecht ·
-        2 jaar wettelijke garantie.
+        2 jaar wettelijke garantie. De betaling wordt namens {company.brand} geïnd door{" "}
+        {company.paymentCollector.split(" (")[0]}.
       </p>
       <button className="buy" disabled={busy}>
         {busy ? "EVEN GEDULD…" : "BETAAL MET REVOLUT"}
