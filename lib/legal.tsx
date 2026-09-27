@@ -64,8 +64,9 @@ export const legalPages: Record<string, Page> = {
         body: (
           <p>
             Je betaalt vooraf en veilig via Revolut (Revolut Pay, Visa, Mastercard, American Express, Apple Pay of
-            Google Pay). Wij ontvangen of bewaren nooit je kaartgegevens. Is de betaling niet gelukt, dan is er geen
-            bestelling.
+            Google Pay). De betaling wordt namens {c.brand} geïnd door {c.paymentCollector}; daarom zie je die naam
+            op de betaalpagina en op je rekeningafschrift. Je koopovereenkomst sluit je met {c.brand}. Wij ontvangen
+            of bewaren nooit je kaartgegevens. Is de betaling niet gelukt, dan is er geen bestelling.
           </p>
         ),
       },
@@ -222,6 +223,7 @@ export const legalPages: Record<string, Page> = {
             <p>We verkopen je gegevens nooit. We werken alleen met deze partners, die ze voor ons verwerken:</p>
             <ul>
               <li><b>Revolut</b>: betalingen (voor de betaling zelf is Revolut ook zelf verantwoordelijk).</li>
+              <li><b>{c.paymentCollector}</b>: int de betalingen namens {c.brand} via zijn Revolut-account en ziet daarbij je naam, e-mailadres, bedrag en bestelnummer.</li>
               <li><b>Google Firebase</b> (Google Cloud, servers in de EU): opslag van bestellingen, producten en inschrijvingen.</li>
               <li><b>Vercel</b>: hosting van de website.</li>
               <li><b>Resend</b>: versturen van bestel- en servicemails.</li>

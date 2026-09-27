@@ -19,6 +19,8 @@ export const company = {
   phone: "",
   /** Where returns must be sent; defaults to the registered office. */
   returnAddress: "",
+  /** Company that collects card payments on behalf of the seller (name shown on the Revolut payment page). */
+  paymentCollector: "Solyn Global Ltd (Londen, Verenigd Koninkrijk)",
   /** Shop policy. */
   countries: ["België", "Nederland", "Luxemburg", "Frankrijk", "Duitsland", "Spanje"],
   shippingCost: "gratis",
