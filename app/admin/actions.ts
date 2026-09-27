@@ -5,6 +5,11 @@ import { isAdmin, login, logout } from "@/lib/admin-auth";
 import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
+const EMULATOR_PREFIX = process.env.FIREBASE_STORAGE_EMULATOR_HOST
+  ? `http://${process.env.FIREBASE_STORAGE_EMULATOR_HOST}/`
+  : null;
+const validImage = (u: unknown) =>
+  typeof u === "string" && (IMAGE_URL.test(u) || Boolean(EMULATOR_PREFIX && u.startsWith(EMULATOR_PREFIX)));
 import { createProduct, stripe, updateProduct, type ProductInput } from "@/lib/shop";
 
 export type FormState = { error?: string; ok?: string; savedId?: string };
@@ -50,7 +55,7 @@ function parseProduct(form: FormData): ProductInput | string {
   if (
     !Array.isArray(images) ||
     images.length > MAX_IMAGES ||
-    !images.every((u) => typeof u === "string" && IMAGE_URL.test(u))
+    !images.every(validImage)
   )
     return `Afbeeldingen moeten een pad (/images/…) of https-link zijn, max. ${MAX_IMAGES}.`;
   const stock = emptyStock();
@@ -83,7 +88,7 @@ export async function saveProductAction(_: FormState, form: FormData): Promise<F
     else savedId = await createProduct(input);
   } catch (error) {
     console.error("Saving product failed", error);
-    return { error: "Opslaan mislukt. Controleer de Stripe-configuratie en probeer opnieuw." };
+    return { error: "Opslaan mislukt. Controleer de Firebase-koppeling en probeer opnieuw." };
   }
   revalidatePath("/");
   revalidatePath("/admin", "layout");

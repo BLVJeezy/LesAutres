@@ -1,11 +1,12 @@
 import Store from "@/components/store";
 import { previewProduct } from "@/lib/catalog";
-import { listProducts, publicProduct, stripe } from "@/lib/shop";
+import { firebaseConfigured } from "@/lib/firebase";
+import { listProducts, publicProduct } from "@/lib/shop";
 
 export const revalidate = 60;
 
 export default async function Home() {
-  let products = stripe()
+  let products = firebaseConfigured()
     ? await listProducts().catch((error) => {
         console.error("Loading products failed", error);
         return [];

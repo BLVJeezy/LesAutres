@@ -1,9 +1,35 @@
 "use client";
 import { useRef, useState } from "react";
-import { upload } from "@vercel/blob/client";
 import { MAX_IMAGES } from "@/lib/catalog";
 
-const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/avif"];
+const MAX_EDGE = 2000;
+
+/** Shrinks a photo to max 2000px JPEG so phone photos (incl. HEIC on iPhone) stay under the upload limit. */
+async function prepare(file: File): Promise<Blob> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.86));
+    if (blob) return blob;
+  } catch {}
+  if (["image/jpeg", "image/png", "image/webp"].includes(file.type)) return file;
+  throw new Error("dit bestandstype wordt niet ondersteund");
+}
+
+async function uploadPhoto(file: File): Promise<string> {
+  const body = new FormData();
+  const blob = await prepare(file);
+  body.append("file", new File([blob], file.name.replace(/\.[^.]+$/, "") + (blob.type === "image/jpeg" ? ".jpg" : ""), { type: blob.type || file.type }));
+  const res = await fetch("/api/admin/upload", { method: "POST", body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) throw new Error(data.error || "uploaden mislukt");
+  return data.url;
+}
 
 export function ImageManager({
   initial,
@@ -25,16 +51,8 @@ export function ImageManager({
     setBusy((n) => n + list.length);
     for (const file of list) {
       try {
-        if (!ACCEPTED.includes(file.type))
-          throw new Error("gebruik een JPG-, PNG- of WEBP-foto");
-        if (file.size > 10 * 1024 * 1024) throw new Error("foto is groter dan 10 MB");
-        const safeName = file.name.toLowerCase().replace(/[^a-z0-9.\-]+/g, "-");
-        const blob = await upload(`products/${safeName}`, file, {
-          access: "public",
-          handleUploadUrl: "/api/admin/upload",
-          multipart: file.size > 5 * 1024 * 1024,
-        });
-        setImages((prev) => (prev.length < MAX_IMAGES ? [...prev, blob.url] : prev));
+        const url = await uploadPhoto(file);
+        setImages((prev) => (prev.length < MAX_IMAGES ? [...prev, url] : prev));
       } catch (e) {
         setError(`${file.name}: ${(e as Error).message}`);
       } finally {
@@ -94,7 +112,7 @@ export function ImageManager({
       </div>
       {!canUpload && (
         <p className="admin-note">
-          Foto&apos;s uploaden kan zodra de Blob-opslag in Vercel gekoppeld is.
+          Foto&apos;s uploaden kan zodra Firebase gekoppeld is.
         </p>
       )}
       {error && <p className="admin-alert">{error}</p>}

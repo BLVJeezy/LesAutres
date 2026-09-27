@@ -2,7 +2,8 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/admin-auth";
-import { getProduct, stripe } from "@/lib/shop";
+import { firebaseConfigured } from "@/lib/firebase";
+import { getProduct } from "@/lib/shop";
 import { ProductForm } from "../product-form";
 
 export default async function EditProduct({
@@ -27,13 +28,12 @@ export default async function EditProduct({
         </div>
       </div>
       {saved && <p className="admin-ok">Product aangemaakt.</p>}
-      {!stripe() && (
+      {!firebaseConfigured() && (
         <p className="admin-alert">
-          Opslaan kan zodra Stripe gekoppeld is. Daarna staat dit product
-          automatisch klaar; vul dan kostprijs en voorraad in en zet het online.
+          Opslaan kan zodra Firebase gekoppeld is.
         </p>
       )}
-      <ProductForm product={product} canUpload={Boolean(process.env.BLOB_READ_WRITE_TOKEN)} />
+      <ProductForm product={product} canUpload={firebaseConfigured()} />
     </>
   );
 }

@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/admin-auth";
-import { adminProducts, stripe } from "@/lib/shop";
+import { firebaseConfigured } from "@/lib/firebase";
+import { adminProducts } from "@/lib/shop";
 import { ProductManager } from "./product-manager";
 
 export default async function Products() {
@@ -8,8 +9,8 @@ export default async function Products() {
   return (
     <ProductManager
       products={products}
-      connected={Boolean(stripe())}
-      canUpload={Boolean(process.env.BLOB_READ_WRITE_TOKEN)}
+      connected={firebaseConfigured()}
+      canUpload={firebaseConfigured()}
     />
   );
 }
