@@ -1791,12 +1791,15 @@ footer {
 }
 .gallery-dots {
   position: absolute;
-  left: 0;
-  right: 0;
+  left: 50%;
   bottom: 10px;
+  transform: translateX(-50%);
   display: flex;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(16, 17, 16, 0.55);
 }
 .gallery-dots button {
   width: 24px;
@@ -2046,4 +2049,14 @@ footer {
 .thanks-ship {
   margin: 18px 0 -24px;
   color: var(--text-dim);
+}
+.gallery-dots button {
+  width: 18px;
+  height: 18px;
+}
+.gallery-dots button::before {
+  width: 6px;
+  height: 6px;
+  box-shadow: none;
+  background: #ffffff80;
 }
