@@ -1860,3 +1860,80 @@ footer {
 .checkout-form .buy {
   margin-top: 6px;
 }
+
+/* Thank-you page */
+.thanks {
+  max-width: 560px;
+  margin: auto;
+  min-height: 100vh;
+  padding: 40px 16px 80px;
+}
+.thanks-mark {
+  display: inline-block;
+  margin-bottom: 64px;
+}
+.thanks h1 {
+  font-size: clamp(38px, 9vw, 64px);
+  line-height: 0.95;
+  letter-spacing: -2px;
+  text-transform: uppercase;
+  margin: 14px 0 22px;
+}
+.thanks h1 span {
+  color: var(--pink);
+}
+.thanks-lead {
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--text);
+  margin-bottom: 32px;
+}
+.thanks-lead b {
+  overflow-wrap: anywhere;
+}
+.thanks-lines {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--border);
+}
+.thanks-lines li {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.thanks-lines img {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  background: var(--surface);
+}
+.thanks-lines div {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.thanks-lines b {
+  font-size: 13px;
+  text-transform: uppercase;
+}
+.thanks-lines span,
+.thanks-lines > li > span {
+  font: 11px monospace;
+  color: var(--text-dim);
+}
+.thanks-lines > li > span {
+  color: var(--text);
+}
+.thanks-total {
+  display: flex;
+  justify-content: space-between;
+  font: 12px monospace;
+  margin: 18px 0 36px;
+}
+.thanks-ok {
+  text-decoration: none;
+}
