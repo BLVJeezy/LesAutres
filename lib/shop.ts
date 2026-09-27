@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Stripe from "stripe";
 import {
   emptyStock,
@@ -264,7 +265,7 @@ function formatAddress(a: Stripe.Address | null | undefined) {
     .join(", ");
 }
 
-export async function listOrders(sinceUnix?: number): Promise<Order[]> {
+export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => {
   const s = stripe();
   if (!s) return [];
   const orders: Order[] = [];
@@ -306,4 +307,14 @@ export async function listOrders(sinceUnix?: number): Promise<Order[]> {
     });
   }
   return orders;
+});
+
+/** Shopify-style order numbers: #1001 for the first paid order, counting up by date. */
+export function orderNumbers(orders: Order[]): Map<string, number> {
+  const sorted = [...orders].sort((a, b) => a.created - b.created);
+  return new Map(sorted.map((o, i) => [o.id, 1001 + i]));
 }
+
+export type OrderStatus = "refunded" | "shipped" | "open";
+export const orderStatus = (o: Order): OrderStatus =>
+  o.refunded >= o.total && o.total > 0 ? "refunded" : o.shippedAt ? "shipped" : "open";
