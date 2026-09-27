@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money, sizes, totalStock, VAT_RATE } from "@/lib/catalog";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
+import { demoOrders } from "@/lib/demo";
 import { SalesChart, type Day } from "./sales-chart";
 
 const PERIODS = { "7": "7 dagen", "30": "30 dagen", "90": "90 dagen", all: "Alles" } as const;
@@ -17,14 +18,18 @@ const dayLabel = (key: string) =>
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; demo?: string }>;
 }) {
   await requireAdmin();
-  const { period: raw } = await searchParams;
+  const { period: raw, demo: demoParam } = await searchParams;
+  const demo = demoParam === "1";
   const period: Period = raw && raw in PERIODS ? (raw as Period) : "30";
   const now = Math.floor(Date.now() / 1000);
   const since = period === "all" ? undefined : now - Number(period) * 86400;
-  const [allOrders, products] = await Promise.all([listOrders(), adminProducts()]);
+  const [realOrders, products] = await Promise.all([listOrders(), adminProducts()]);
+  const allOrders = demo
+    ? demoOrders(products[0]?.id ?? "baddies-tee", products[0]?.price || 4495, products[0]?.cost || 900, now)
+    : realOrders;
   const orders = since ? allOrders.filter((o) => o.created >= since) : allOrders;
   const numbers = orderNumbers(allOrders);
 
@@ -82,15 +87,26 @@ export default async function Dashboard({
   return (
     <>
       <div className="admin-head">
-        <h1>Home</h1>
+        <h1>Home {demo && <span className="badge attention">TESTMODUS</span>}</h1>
         <nav className="admin-tabs" aria-label="Periode">
           {(Object.keys(PERIODS) as Period[]).map((p) => (
-            <Link key={p} href={`/admin?period=${p}`} aria-current={p === period ? "page" : undefined}>
+            <Link key={p} href={`/admin?period=${p}${demo ? "&demo=1" : ""}`} aria-current={p === period ? "page" : undefined}>
               {PERIODS[p]}
             </Link>
           ))}
         </nav>
       </div>
+
+      <p className={demo ? "admin-banner" : "admin-note"}>
+        {demo ? (
+          <>
+            Testmodus: voorbeeldcijfers van een webshop met gemiddeld € 10k–30k winst per maand. Dit zijn géén
+            echte bestellingen. <Link href={`/admin?period=${period}`}>Terug naar echte cijfers →</Link>
+          </>
+        ) : (
+          <Link href={`/admin?period=${period}&demo=1`}>Testmodus aanzetten →</Link>
+        )}
+      </p>
 
       <section className="admin-card">
         <div className="admin-kpis">
@@ -120,7 +136,7 @@ export default async function Dashboard({
                 <ul className="admin-lines">
                   {open.slice(0, 5).map((o) => (
                     <li key={o.id}>
-                      <Link href={`/admin/orders/${o.id}`} className="grow" style={{ textDecoration: "none" }}>
+                      <Link href={demo ? `/admin?period=${period}&demo=1` : `/admin/orders/${o.id}`} className="grow" style={{ textDecoration: "none" }}>
                         <b>#{numbers.get(o.id)}</b> · {o.name || o.email}
                         <div className="admin-note">
                           {new Date(o.created * 1000).toLocaleDateString("nl-BE", { timeZone: TZ })}
