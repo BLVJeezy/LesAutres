@@ -505,7 +505,7 @@ export default function Store({
         </button>
       </header>
       <main>
-        <section className="hero-section">
+        <section className="hero-section hero-logo">
           <div className="hero-top micro">
             <span>
               INDEPENDENT LABEL
@@ -523,11 +523,12 @@ export default function Store({
           </div>
           <div className="hero-backdrop" aria-hidden>
             <Image
-              src="/images/hero-rooftop-dusk.jpg"
+              src="/images/les-autres-logo.png"
               alt=""
-              fill
+              width={1504}
+              height={540}
               priority
-              sizes="100vw"
+              sizes="(max-width: 700px) 90vw, 70vw"
             />
           </div>
           <div className="hero-title">

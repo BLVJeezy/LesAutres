@@ -2081,3 +2081,67 @@ footer {
   color: #f2f1ed;
   border-color: #f2f1ed88;
 }
+
+/* Hero: big logo on the light background */
+.hero-section.hero-logo {
+  background: var(--bg);
+  color: var(--text);
+}
+.hero-logo .hero-top,
+.hero-logo .hero-bottom,
+.hero-logo .hero-rule {
+  text-shadow: none;
+  color: var(--text);
+}
+.hero-logo .hero-top,
+.hero-logo .hero-bottom > .micro,
+.hero-logo .hero-rule {
+  color: var(--text-dim);
+}
+.hero-logo .hero-bottom p span {
+  color: var(--pink);
+}
+.hero-logo .hero-rule {
+  border-color: var(--border);
+}
+.hero-logo .round-link {
+  color: var(--text);
+  border-color: var(--border);
+}
+.hero-logo .hero-backdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 90px 8% 150px;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  transform: none;
+  aspect-ratio: auto;
+}
+.hero-logo .hero-backdrop img {
+  position: static !important;
+  width: min(100%, 1100px);
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+}
+@media (max-width: 700px) {
+  .hero-section.hero-logo {
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  .hero-logo .hero-title {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+  .hero-logo .hero-backdrop {
+    position: relative;
+    padding: 56px 0 40px;
+  }
+  .hero-logo .hero-bottom {
+    background: none;
+  }
+}
