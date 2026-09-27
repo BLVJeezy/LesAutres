@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import Image, { getImageProps } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Component,
@@ -163,15 +163,6 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
     </form>
   );
 }
-const heroCommon = { alt: "", fill: true, priority: true, sizes: "100vw" };
-const {
-  props: { srcSet: heroDesktopSrcSet },
-} = getImageProps({ ...heroCommon, src: "/images/hero-sunset-wide.jpg" });
-const heroDesktop = { srcSet: heroDesktopSrcSet };
-const { props: heroMobile } = getImageProps({
-  ...heroCommon,
-  src: "/images/hero-sunset.jpg",
-});
 const photos = [
   {
     src: "/images/perspective-street.jpg",
@@ -323,14 +314,13 @@ export default function Store() {
             </span>
           </div>
           <div className="hero-backdrop" aria-hidden>
-            <picture>
-              <source
-                media="(min-width: 701px)"
-                srcSet={heroDesktop.srcSet}
-                sizes="100vw"
-              />
-              <img {...heroMobile} alt="" />
-            </picture>
+            <Image
+              src="/images/hero-rooftop-dusk.jpg"
+              alt=""
+              fill
+              priority
+              sizes="100vw"
+            />
           </div>
           <div className="hero-title">
             <h1 className="sr-only">Les Autres</h1>
