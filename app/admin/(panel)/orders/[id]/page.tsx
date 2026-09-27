@@ -67,6 +67,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               </ul>
               {order.paymentIntent && status !== "refunded" && (
                 <form action={toggleShippedAction} style={{ display: "flex", justifyContent: "flex-end", marginTop: 12 }}>
+                  <input type="hidden" name="orderId" value={order.id} />
                   <input type="hidden" name="paymentIntent" value={order.paymentIntent} />
                   <input type="hidden" name="shipped" value={order.shippedAt ? "0" : "1"} />
                   <button className={`admin-btn ${order.shippedAt ? "secondary" : ""}`}>

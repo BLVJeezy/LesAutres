@@ -9,11 +9,11 @@ const content: Record<
     sections: [
       {
         title: "Wat we bewaren",
-        text: "Deze preview bewaart je winkelmand en cookiekeuze lokaal in je browser. Inschrijfformulieren zijn nog niet aangesloten; ingevoerde e-mailadressen worden niet opgeslagen.",
+        text: "Je winkelmand en cookiekeuze bewaren we lokaal in je browser. Schrijf je je in voor nieuwe drops of een maat die terugkomt, dan bewaren we je e-mailadres en die keuze, alleen om je daarover te informeren. Bestellingen verwerken we via onze betaalprovider.",
       },
       {
         title: "E-mailupdates",
-        text: "Bij lancering wordt inschrijven alleen actief met expliciete toestemming en dubbele opt-in. Je bevestigt dan je e-mailadres via een link en kunt je op elk moment uitschrijven.",
+        text: "Inschrijven gebeurt alleen met jouw expliciete toestemming. Je kunt je op elk moment laten uitschrijven; we verwijderen je e-mailadres dan uit onze lijst.",
       },
       {
         title: "Cookies & analytics",

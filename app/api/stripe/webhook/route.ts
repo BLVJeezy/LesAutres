@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import type Stripe from "stripe";
-import { adjustStock, decodeLines, SHOP_TAG, stripe } from "@/lib/shop";
+import { firestore } from "@/lib/firebase";
+import {
+  adjustStock,
+  decodeLines,
+  recordPaidSession,
+  refreshOrderByPaymentIntent,
+  SHOP_TAG,
+  stripe,
+} from "@/lib/shop";
 
 export async function POST(request: Request) {
   const s = stripe();
@@ -24,6 +32,16 @@ export async function POST(request: Request) {
     const session = event.data.object;
     if (session.metadata?.shop !== SHOP_TAG || session.payment_status !== "paid")
       return NextResponse.json({ received: true });
+
+    if (firestore()) {
+      // The order document doubles as the idempotency marker: stock only drops the first time.
+      if (await recordPaidSession(session.id)) {
+        await adjustStock(decodeLines(session.metadata?.lines), -1);
+        revalidatePath("/");
+      }
+      return NextResponse.json({ received: true });
+    }
+
     const piId =
       typeof session.payment_intent === "string"
         ? session.payment_intent
@@ -34,6 +52,12 @@ export async function POST(request: Request) {
     await s.paymentIntents.update(piId, { metadata: { stock_applied: "1" } });
     await adjustStock(decodeLines(session.metadata?.lines), -1);
     revalidatePath("/");
+  }
+
+  if (event.type === "charge.refunded") {
+    const pi = event.data.object.payment_intent;
+    const piId = typeof pi === "string" ? pi : pi?.id;
+    if (piId) await refreshOrderByPaymentIntent(piId);
   }
 
   return NextResponse.json({ received: true });

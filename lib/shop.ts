@@ -225,7 +225,43 @@ function formatAddress(a: Stripe.Address | null | undefined) {
     .join(", ");
 }
 
-export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => {
+const ORDERS = "orders";
+const SESSION_EXPAND = ["payment_intent.latest_charge.balance_transaction"];
+
+/** Builds an Order from a Checkout Session expanded with payment_intent.latest_charge.balance_transaction. */
+export function orderFromSession(session: Stripe.Checkout.Session): Order | null {
+  if (session.payment_status !== "paid" || session.metadata?.shop !== SHOP_TAG) return null;
+  const pi = session.payment_intent as Stripe.PaymentIntent | null;
+  const charge = pi?.latest_charge as Stripe.Charge | null | undefined;
+  const bt = charge?.balance_transaction as Stripe.BalanceTransaction | null | undefined;
+  const lines = decodeLines(session.metadata?.lines);
+  const total = session.amount_total ?? 0;
+  const refunded = charge?.amount_refunded ?? 0;
+  const fullyRefunded = total > 0 && refunded >= total;
+  const net = total - refunded;
+  const cost = fullyRefunded ? 0 : lines.reduce((n, l) => n + l[2] * l[4], 0);
+  const fee = bt?.fee ?? 0;
+  const vat = net - exVat(net);
+  const shipping = session.collected_information?.shipping_details;
+  return {
+    id: session.id,
+    paymentIntent: pi?.id ?? null,
+    created: session.created,
+    email: session.customer_details?.email ?? "",
+    name: shipping?.name ?? session.customer_details?.name ?? "",
+    address: formatAddress(shipping?.address ?? session.customer_details?.address),
+    lines,
+    total,
+    refunded,
+    fee,
+    cost,
+    vat,
+    profit: net - vat - fee - cost,
+    shippedAt: Number(pi?.metadata?.shipped_at) || null,
+  };
+}
+
+async function stripeOrders(sinceUnix?: number): Promise<Order[]> {
   const s = stripe();
   if (!s) return [];
   const orders: Order[] = [];
@@ -233,40 +269,96 @@ export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => 
     status: "complete",
     limit: 100,
     ...(sinceUnix ? { created: { gte: sinceUnix } } : {}),
-    expand: ["data.payment_intent.latest_charge.balance_transaction"],
+    expand: SESSION_EXPAND.map((e) => `data.${e}`),
   })) {
-    if (session.payment_status !== "paid" || session.metadata?.shop !== SHOP_TAG)
-      continue;
-    const pi = session.payment_intent as Stripe.PaymentIntent | null;
-    const charge = pi?.latest_charge as Stripe.Charge | null | undefined;
-    const bt = charge?.balance_transaction as Stripe.BalanceTransaction | null | undefined;
-    const lines = decodeLines(session.metadata?.lines);
-    const total = session.amount_total ?? 0;
-    const refunded = charge?.amount_refunded ?? 0;
-    const fullyRefunded = total > 0 && refunded >= total;
-    const net = total - refunded;
-    const cost = fullyRefunded ? 0 : lines.reduce((n, l) => n + l[2] * l[4], 0);
-    const fee = bt?.fee ?? 0;
-    const vat = net - exVat(net);
-    const shipping = session.collected_information?.shipping_details;
-    orders.push({
-      id: session.id,
-      paymentIntent: pi?.id ?? null,
-      created: session.created,
-      email: session.customer_details?.email ?? "",
-      name: shipping?.name ?? session.customer_details?.name ?? "",
-      address: formatAddress(shipping?.address ?? session.customer_details?.address),
-      lines,
-      total,
-      refunded,
-      fee,
-      cost,
-      vat,
-      profit: net - vat - fee - cost,
-      shippedAt: Number(pi?.metadata?.shipped_at) || null,
-    });
+    const order = orderFromSession(session);
+    if (order) orders.push(order);
   }
   return orders;
+}
+
+/** Firestore has no nested arrays, so lines are stored as objects. */
+type OrderDoc = Omit<Order, "lines" | "shippedAt"> & {
+  lines: { productId: string; size: Size; qty: number; price: number; cost: number }[];
+  shippedAt?: number | null;
+  updatedAt: number;
+};
+
+function toDoc(o: Order): Omit<OrderDoc, "shippedAt"> {
+  const { shippedAt: _ignored, lines, ...rest } = o;
+  void _ignored;
+  return {
+    ...rest,
+    lines: lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
+    updatedAt: Date.now(),
+  };
+}
+
+function fromDoc(d: OrderDoc): Order {
+  return {
+    ...d,
+    lines: (d.lines ?? []).map((l) => [l.productId, l.size, l.qty, l.price, l.cost] as OrderLine),
+    shippedAt: d.shippedAt ?? null,
+  };
+}
+
+/** Stores a paid session as an order. Returns true when it was new (first time seen). */
+export async function recordPaidSession(sessionId: string): Promise<boolean> {
+  const s = stripe();
+  const db = firestore();
+  if (!s || !db) return false;
+  const session = await s.checkout.sessions.retrieve(sessionId, { expand: SESSION_EXPAND });
+  const order = orderFromSession(session);
+  if (!order) return false;
+  try {
+    await db.collection(ORDERS).doc(order.id).create({ ...toDoc(order), shippedAt: order.shippedAt });
+    return true;
+  } catch {
+    await db.collection(ORDERS).doc(order.id).set(toDoc(order), { merge: true });
+    return false;
+  }
+}
+
+/** Refreshes refund/fee data of the order paid with this PaymentIntent. */
+export async function refreshOrderByPaymentIntent(paymentIntentId: string) {
+  const s = stripe();
+  const db = firestore();
+  if (!s || !db) return;
+  const snap = await db.collection(ORDERS).where("paymentIntent", "==", paymentIntentId).limit(1).get();
+  const id = snap.docs[0]?.id;
+  if (id) await recordPaidSession(id);
+}
+
+/** Imports paid Stripe orders that are not in Firestore yet; keeps shipping status of existing ones. */
+export async function syncOrdersFromStripe(): Promise<number> {
+  const db = firestore();
+  if (!db) return 0;
+  const existing = new Set((await db.collection(ORDERS).select().get()).docs.map((d) => d.id));
+  let added = 0;
+  for (const order of await stripeOrders()) {
+    if (existing.has(order.id)) continue;
+    await db.collection(ORDERS).doc(order.id).set({ ...toDoc(order), shippedAt: order.shippedAt });
+    added++;
+  }
+  return added;
+}
+
+export async function setOrderShipped(orderId: string, shipped: boolean) {
+  const db = firestore();
+  if (!db) return false;
+  const ref = db.collection(ORDERS).doc(orderId);
+  if (!(await ref.get()).exists) return false;
+  await ref.update({ shippedAt: shipped ? Math.floor(Date.now() / 1000) : null, updatedAt: Date.now() });
+  return true;
+}
+
+export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => {
+  const db = firestore();
+  if (!db) return stripeOrders(sinceUnix);
+  let q = db.collection(ORDERS).orderBy("created", "desc");
+  if (sinceUnix) q = q.where("created", ">=", sinceUnix);
+  const snap = await q.get();
+  return snap.docs.map((d) => fromDoc(d.data() as OrderDoc));
 });
 
 /** Shopify-style order numbers: #1001 for the first paid order, counting up by date. */

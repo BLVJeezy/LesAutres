@@ -121,7 +121,9 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
             color,
           });
           setStatus(
-            "Check je inbox. Bevestig je inschrijving via de link in onze e-mail.",
+            size
+              ? "Je staat op de lijst. We laten het je weten zodra je maat terug is."
+              : "Je staat op de lijst. Je hoort het als eerste bij een nieuwe drop.",
           );
           setEmail("");
         } catch (error) {
