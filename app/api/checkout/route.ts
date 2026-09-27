@@ -1,10 +1,44 @@
 import { NextResponse } from "next/server";
-import type Stripe from "stripe";
 import { MAX_CART_LINES, sizes, type CartItem } from "@/lib/catalog";
-import { encodeLines, listProducts, SHOP_TAG, stripe } from "@/lib/shop";
+import { firebaseConfigured } from "@/lib/firebase";
+import { revolutConfigured } from "@/lib/revolut";
+import { encodeLines, listProducts, startCheckout, type Checkout } from "@/lib/shop";
 
-const SHIPPING_COUNTRIES: Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry[] =
-  ["BE", "NL", "LU", "FR", "DE", "ES"];
+const SHIPPING_COUNTRIES = ["BE", "NL", "LU", "FR", "DE", "ES"];
+
+const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
+function parseCustomer(input: unknown): Pick<Checkout, "customer" | "shipping"> | null {
+  const c = (input ?? {}) as Record<string, unknown>;
+  const email = text(c.email, 254).toLowerCase();
+  const name = text(c.name, 120);
+  const phone = text(c.phone, 30);
+  const street = text(c.street, 200);
+  const street2 = text(c.street2, 200);
+  const postcode = text(c.postcode, 12);
+  const city = text(c.city, 80);
+  const country = text(c.country, 2).toUpperCase();
+  if (
+    !/^\S+@\S+\.\S+$/.test(email) ||
+    name.length < 2 ||
+    street.length < 3 ||
+    postcode.length < 3 ||
+    city.length < 2 ||
+    !SHIPPING_COUNTRIES.includes(country) ||
+    (phone && !/^\+?[\d\s().-]{6,30}$/.test(phone))
+  )
+    return null;
+  return {
+    customer: { email, full_name: name, ...(phone && { phone }) },
+    shipping: {
+      street_line_1: street,
+      ...(street2 && { street_line_2: street2 }),
+      postcode,
+      city,
+      country_code: country,
+    },
+  };
+}
 
 function parseCart(input: unknown): CartItem[] | null {
   if (!Array.isArray(input) || input.length === 0 || input.length > MAX_CART_LINES)
@@ -30,8 +64,7 @@ function parseCart(input: unknown): CartItem[] | null {
 }
 
 export async function POST(request: Request) {
-  const s = stripe();
-  if (!s) {
+  if (!revolutConfigured() || !firebaseConfigured()) {
     return NextResponse.json(
       { error: "Betalen is nog niet actief. Probeer het later opnieuw." },
       { status: 503 },
@@ -42,6 +75,13 @@ export async function POST(request: Request) {
   const cart = parseCart(body?.cart);
   if (!cart) {
     return NextResponse.json({ error: "Je winkelmand is ongeldig." }, { status: 400 });
+  }
+  const who = parseCustomer(body?.customer);
+  if (!who) {
+    return NextResponse.json(
+      { error: "Vul je naam, e-mailadres en volledige verzendadres correct in." },
+      { status: 400 },
+    );
   }
 
   try {
@@ -61,46 +101,18 @@ export async function POST(request: Request) {
     }
 
     const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
-    const lines = JSON.stringify(encodeLines(cart, products));
-    if (lines.length > 500) {
-      return NextResponse.json(
-        { error: "Te veel verschillende artikelen in één bestelling." },
-        { status: 400 },
-      );
-    }
-    const sizeSummary = cart
+    const description = cart
       .map((c) => `${products.find((p) => p.id === c.productId)!.name} — maat ${c.size} × ${c.quantity}`)
       .join(" · ");
-
-    const session = await s.checkout.sessions.create({
-      mode: "payment",
-      locale: "nl",
-      line_items: cart.map((item) => {
-        const p = products.find((x) => x.id === item.productId)!;
-        return {
-          quantity: item.quantity,
-          price_data: {
-            currency: "eur",
-            unit_amount: p.price,
-            product_data: {
-              name: `${p.name} — maat ${item.size}`,
-              ...(p.image.startsWith("https://") ? { images: [p.image] } : {}),
-              metadata: { shop_line: "1", product_id: p.id, size: item.size },
-            },
-          },
-        };
-      }),
-      shipping_address_collection: { allowed_countries: SHIPPING_COUNTRIES },
-      phone_number_collection: { enabled: true },
-      custom_text: { submit: { message: sizeSummary.slice(0, 1200) } },
-      metadata: { shop: SHOP_TAG, lines },
-      payment_intent_data: { metadata: { shop: SHOP_TAG } },
-      success_url: `${origin}/bedankt?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/#drop`,
+    const url = await startCheckout({
+      lines: encodeLines(cart, products),
+      ...who,
+      description,
+      origin,
     });
-    return NextResponse.json({ url: session.url });
+    return NextResponse.json({ url });
   } catch (error) {
-    console.error("Stripe checkout failed", error);
+    console.error("Revolut checkout failed", error);
     return NextResponse.json(
       { error: "Afrekenen lukt nu niet. Probeer het zo meteen opnieuw." },
       { status: 502 },

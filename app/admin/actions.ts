@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { isAdmin, login, logout } from "@/lib/admin-auth";
 import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
+import { createRevolutWebhook } from "@/lib/revolut";
+import { setSettings } from "@/lib/settings";
 import { deleteSubscriber } from "@/lib/subscribers";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
@@ -13,9 +15,8 @@ const validImage = (u: unknown) =>
   typeof u === "string" && (IMAGE_URL.test(u) || Boolean(EMULATOR_PREFIX && u.startsWith(EMULATOR_PREFIX)));
 import {
   createProduct,
+  setOrderRefunded,
   setOrderShipped,
-  stripe,
-  syncOrdersFromStripe,
   updateProduct,
   type ProductInput,
 } from "@/lib/shop";
@@ -105,24 +106,25 @@ export async function saveProductAction(_: FormState, form: FormData): Promise<F
 
 export async function toggleShippedAction(form: FormData) {
   await guard();
-  const shipped = form.get("shipped") === "1";
-  const orderId = String(form.get("orderId") ?? "");
-  if (orderId.startsWith("cs_") && (await setOrderShipped(orderId, shipped))) {
+  if (await setOrderShipped(String(form.get("orderId") ?? ""), form.get("shipped") === "1"))
     revalidatePath("/admin", "layout");
-    return;
-  }
-  const s = stripe();
-  const pi = String(form.get("paymentIntent") ?? "");
-  if (!s || !pi.startsWith("pi_")) return;
-  await s.paymentIntents.update(pi, {
-    metadata: { shipped_at: shipped ? String(Math.floor(Date.now() / 1000)) : "" },
-  });
-  revalidatePath("/admin", "layout");
 }
 
-export async function syncOrdersAction(): Promise<void> {
+export async function toggleRefundedAction(form: FormData) {
   await guard();
-  await syncOrdersFromStripe();
+  if (await setOrderRefunded(String(form.get("orderId") ?? ""), form.get("refunded") === "1")) {
+    revalidatePath("/");
+    revalidatePath("/admin", "layout");
+  }
+}
+
+export async function setupRevolutWebhookAction(): Promise<void> {
+  await guard();
+  const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
+  if (!site) throw new Error("NEXT_PUBLIC_SITE_URL ontbreekt.");
+  const url = `${site.replace(/\/$/, "")}/api/revolut/webhook`;
+  const hook = await createRevolutWebhook(url);
+  await setSettings({ revolutWebhookSecret: hook.signing_secret, revolutWebhookUrl: url });
   revalidatePath("/admin", "layout");
 }
 

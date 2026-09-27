@@ -31,7 +31,6 @@ export default async function Dashboard({
   const sum = (f: (o: (typeof orders)[number]) => number) => orders.reduce((n, o) => n + f(o), 0);
   const revenue = sum((o) => o.total - o.refunded);
   const vat = sum((o) => o.vat);
-  const fees = sum((o) => o.fee);
   const cogs = sum((o) => o.cost);
   const profit = sum((o) => o.profit);
   const net = revenue - vat;
@@ -75,7 +74,7 @@ export default async function Dashboard({
     ["Winst", money(profit), net > 0 ? `${Math.round((profit / net) * 100)}% marge` : undefined],
     ["Gem. bestelling", orders.length ? money(Math.round(revenue / orders.length)) : "—"],
     ["Btw", money(vat), `${VAT_RATE * 100}%`],
-    ["Stripe-kosten", money(fees)],
+    ["Terugbetaald", money(orders.reduce((n, o) => n + o.refunded, 0))],
     ["Kostprijs goederen", money(cogs)],
     ["Te verzenden", String(open.length), "alle periodes"],
   ];
@@ -214,7 +213,7 @@ export default async function Dashboard({
             </div>
           </section>
           <p className="admin-note">
-            Winst = omzet − btw − Stripe-kosten − kostprijs; terugbetalingen afgetrokken.
+            Winst = omzet − btw − kostprijs; terugbetalingen afgetrokken.
           </p>
         </div>
       </div>
