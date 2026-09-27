@@ -1,4 +1,5 @@
 import { money } from "./catalog";
+import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
 // Order e-mails via Resend. RESEND_API_BASE points at a local mock in tests; leave unset in production.
@@ -6,12 +7,7 @@ export const mailConfigured = () => Boolean(process.env.RESEND_API_KEY);
 
 export type MailLine = { name: string; size: string; qty: number; price: number; image: string };
 
-export function siteUrl() {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3000");
-  return raw.replace(/\/$/, "");
-}
+export { siteUrl };
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);

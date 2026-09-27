@@ -5,6 +5,7 @@ import { isAdmin, login, logout } from "@/lib/admin-auth";
 import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
 import { createRevolutWebhook } from "@/lib/revolut";
 import { setSettings } from "@/lib/settings";
+import { siteUrl } from "@/lib/site";
 import { deleteSubscriber } from "@/lib/subscribers";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
@@ -120,9 +121,7 @@ export async function toggleRefundedAction(form: FormData) {
 
 export async function setupRevolutWebhookAction(): Promise<void> {
   await guard();
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null);
-  if (!site) throw new Error("NEXT_PUBLIC_SITE_URL ontbreekt.");
-  const url = `${site.replace(/\/$/, "")}/api/revolut/webhook`;
+  const url = `${siteUrl()}/api/revolut/webhook`;
   const hook = await createRevolutWebhook(url);
   await setSettings({ revolutWebhookSecret: hook.signing_secret, revolutWebhookUrl: url });
   revalidatePath("/admin", "layout");
