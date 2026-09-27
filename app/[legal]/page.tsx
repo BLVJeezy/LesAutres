@@ -34,7 +34,7 @@ const content: Record<
       },
       {
         title: "Bestellen & betalen",
-        text: "Bij lancering worden totaalprijs, belastingen, verzendkosten en levertermijn vóór betaling getoond. De betaalprovider wordt voorbereid voor Bancontact, kaarten, Apple Pay en Google Pay; beschikbaarheid is afhankelijk van de uiteindelijke aansluiting.",
+        text: "Bij lancering worden totaalprijs, belastingen, verzendkosten en levertermijn vóór betaling getoond. Je betaalt veilig via Revolut met Revolut Pay, Visa, Mastercard, American Express, Apple Pay of Google Pay.",
       },
       {
         title: "Pre-orders",
