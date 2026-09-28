@@ -190,6 +190,82 @@ const COUNTRIES: [string, string][] = [
   ["ES", "Spanje"],
 ];
 
+const SIZE_ROWS = ["XS", "S", "M", "L", "XL", "XXL"] as const;
+const PRODUCT_CM: Record<string, (string | number)[]> = {
+  "Lengte achterkant": [60, 63, 66, 69, 71, 72],
+  "Schouderbreedte": [52, 53.5, 55, 57, 59, 61],
+  "Lichaamsbreedte": [53.5, 56.5, 59.5, 63.5, 67.5, 70.5],
+  "Mouwlengte (middenachter)": [46, 48, 50, 52, 53, 54],
+};
+const PRODUCT_IN: Record<string, string[]> = {
+  "Lengte achterkant": ["23 1/2", "24 3/4", "26", "27 1/4", "28", "28 1/4"],
+  "Schouderbreedte": ["20 1/2", "21", "21 3/4", "22 1/2", "23 1/4", "24"],
+  "Lichaamsbreedte": ["21", "22 1/4", "23 1/2", "25", "26 1/2", "27 3/4"],
+  "Mouwlengte (middenachter)": ["18", "19", "19 3/4", "20 1/2", "20 3/4", "21 1/4"],
+};
+const BODY_CM: Record<string, string[]> = {
+  Borst: ["80–88", "88–96", "96–104", "104–112", "112–120", "120–128"],
+  Taille: ["66–72", "68–76", "76–84", "84–92", "92–100", "100–108"],
+};
+const BODY_IN: Record<string, string[]> = {
+  Borst: ["31 1/2–34 3/4", "34 3/4–37 3/4", "37 3/4–41", "41–44", "44–47 1/4", "47 1/4–50 1/2"],
+  Taille: ["26–28 1/4", "26 3/4–30", "30–33", "33–36 1/4", "36 1/4–39 1/4", "39 1/4–42 1/2"],
+};
+
+function SizeGuide() {
+  const [tab, setTab] = useState<"product" | "body">("product");
+  const [unit, setUnit] = useState<"cm" | "in">("cm");
+  const data = tab === "product" ? (unit === "cm" ? PRODUCT_CM : PRODUCT_IN) : unit === "cm" ? BODY_CM : BODY_IN;
+  const cols = Object.keys(data);
+  return (
+    <div className="size-table">
+      <div className="size-tabs" role="tablist">
+        <button role="tab" aria-selected={tab === "product"} onClick={() => setTab("product")}>
+          Productafmetingen
+        </button>
+        <button role="tab" aria-selected={tab === "body"} onClick={() => setTab("body")}>
+          Lichaamsafmetingen
+        </button>
+      </div>
+      <div className="size-units">
+        {(["cm", "in"] as const).map((u) => (
+          <label key={u}>
+            <input type="radio" name="size-unit" checked={unit === u} onChange={() => setUnit(u)} />
+            {u}
+          </label>
+        ))}
+      </div>
+      <div className="size-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Maat</th>
+              {cols.map((c) => (
+                <th key={c}>{c}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {SIZE_ROWS.map((size, i) => (
+              <tr key={size}>
+                <th>{size}</th>
+                {cols.map((c) => (
+                  <td key={c}>{data[c][i]}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="tiny">
+        {tab === "product"
+          ? "Afmetingen van het shirt, plat gemeten. Kleine afwijkingen van 1–2 cm zijn mogelijk."
+          : "Jouw lichaamsmaten. Twijfel je tussen twee maten, kies dan de grootste voor de boxy look."}
+      </p>
+    </div>
+  );
+}
+
 function CheckoutForm({
   busy,
   subtotal,
@@ -902,14 +978,7 @@ export default function Store({
             Boxy / oversized. Kies je gebruikelijke maat voor de bedoelde
             pasvorm, of een maat kleiner voor minder volume.
           </p>
-          <div className="size-guide">
-            <span>XS — XXL</span>
-            <h3>ROOM TO BE YOU.</h3>
-            <p>
-              De definitieve borstbreedte en lengte per maat worden na de
-              productiesample toegevoegd. We tonen geen onbevestigde afmetingen.
-            </p>
-          </div>
+          <SizeGuide />
         </Sheet>
       )}
       {sheet === "waitlist" && (
