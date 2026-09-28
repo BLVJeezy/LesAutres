@@ -2145,3 +2145,75 @@ footer {
     background: none;
   }
 }
+
+/* Size chart */
+.size-table {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+.size-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface);
+  border-radius: 6px;
+}
+.size-tabs button {
+  min-height: 40px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+.size-tabs button[aria-selected="true"] {
+  background: #fff;
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: 0 1px 3px #0001;
+}
+.size-units {
+  display: flex;
+  gap: 28px;
+  font-size: 14px;
+}
+.size-units label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.size-units input {
+  accent-color: var(--text);
+  width: 18px;
+  height: 18px;
+}
+.size-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+.size-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.size-table th,
+.size-table td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+.size-table thead th {
+  background: var(--surface);
+  font-weight: 600;
+  white-space: normal;
+  min-width: 90px;
+  vertical-align: bottom;
+}
+.size-table tbody tr:nth-child(even) {
+  background: #00000006;
+}
+.size-table tbody th {
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+}
