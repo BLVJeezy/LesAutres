@@ -1,16 +1,14 @@
 "use client";
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Component,
   useEffect,
   useRef,
   useState,
   useId,
   type ReactNode,
 } from "react";
-import { motion, useReducedMotion, useInView } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowDown,
   ArrowUpRight,
@@ -24,7 +22,6 @@ import {
   RotateCcw,
   Lock,
   Check,
-  MoveHorizontal,
 } from "lucide-react";
 import {
   colors,
@@ -41,19 +38,6 @@ import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } fr
 import { ShirtFallback } from "./shirt-fallback";
 import { ShotCarousel } from "./shot-carousel";
 import { AnthemVideo } from "./anthem-video";
-const Scene = dynamic(() => import("./scene"), { ssr: false });
-class SceneBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
-}
 function Wordmark() {
   return (
     <span className="wordmark">
@@ -455,9 +439,7 @@ export default function Store({
 }) {
   const featured = products[0];
   const price = featured.price;
-  const [shirtReady, setShirtReady] = useState(false);
   const color = colors[0];
-  const [productView, setProductView] = useState<"photo" | "360">("photo");
   const [size, setSize] = useState<Size>();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sheet, setSheet] = useState<"cart" | "sizes" | "waitlist" | null>(
@@ -468,15 +450,9 @@ export default function Store({
   const [busy, setBusy] = useState(false);
   const [checkoutStep, setCheckoutStep] = useState(false);
   const [consent, setConsent] = useState<string | null>("loading");
-  const [webgl, setWebgl] = useState(false);
-  const [shirtFailed, setShirtFailed] = useState(false);
-  const [touched, setTouched] = useState(false);
   const [sticky, setSticky] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const reduced = useReducedMotion();
   const viewer = useRef<HTMLDivElement>(null);
-  const productVisible = useInView(viewer, { margin: "250px", once: true });
-  const productOnscreen = useInView(viewer);
   const stock = size ? featured.stock[size] : null;
   const soldOut = (s: Size) => featured.stock[s] <= 0;
   const productOf = (id: string) => products.find((p) => p.id === id);
@@ -501,10 +477,6 @@ export default function Store({
         );
     } catch {}
     setLoaded(true);
-    const canvas = document.createElement("canvas");
-    const gl = canvas.getContext("webgl2");
-    setWebgl(!!gl);
-    gl?.getExtension("WEBGL_lose_context")?.loseContext();
     trackEvent("view_product", { product: "drop-001" });
   }, []);
   useEffect(() => {
@@ -652,7 +624,7 @@ export default function Store({
         </section>
         <section id="drop" className="product-section">
           <div
-            className={`product-stage ${productView === "photo" ? "photo-mode" : "view-360"}`}
+            className="product-stage photo-mode"
             ref={viewer}
           >
             <div className="stage-label">
@@ -660,55 +632,14 @@ export default function Store({
               <span className="edition">001</span>
             </div>
             <div className="product-render">
-              {productView === "360" &&
-              webgl &&
-              !shirtFailed &&
-              productVisible ? (
-                <>
-                  {!shirtReady && (
-                    <div className="render-placeholder">
-                      <ShirtFallback color={color} />
-                    </div>
-                  )}
-                  <SceneBoundary fallback={<ShirtFallback color={color} />}>
-                    <Scene
-                      mode="shirt"
-                      active={productOnscreen}
-                      onReady={() => setShirtReady(true)}
-                      color={color}
-                      reduced={!!reduced}
-                      onInteract={() => setTouched(true)}
-                      onFail={() => setShirtFailed(true)}
-                    />
-                  </SceneBoundary>
-                </>
-              ) : (
                 <ProductGallery
                   images={featured.images?.length ? featured.images : [featured.image]}
                   alt={featured.name}
                 />
-              )}
             </div>
             <div className="viewer-foot">
               <span className="micro">240 GSM · 100% COTTON</span>
-              {webgl && !shirtFailed && (
-                <button
-                  className="view-toggle"
-                  onClick={() => {
-                    setProductView(productView === "photo" ? "360" : "photo");
-                    setShirtReady(false);
-                  }}
-                >
-                  <RotateCcw size={15} />
-                  {productView === "photo" ? "360° BEKIJKEN" : "FOTO BEKIJKEN"}
-                </button>
-              )}
             </div>
-            {productView === "360" && !touched && !shirtFailed && (
-              <span className="rotation-caption">
-                <MoveHorizontal size={14} /> SLEEP OM TE DRAAIEN
-              </span>
-            )}
           </div>
           <div className="product-info">
             <div className="drop-label">

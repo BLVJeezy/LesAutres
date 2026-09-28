@@ -15,7 +15,6 @@ Open http://localhost:3000. Production: `npm run build && npm start`. Deploy wit
 
 - Stacked, italic chrome 3D wordmark with bevels, reflection lighting and gentle floating movement; locally hosted font and a matching rendered fallback.
 - One approved off-white garment with pink/black print. The supplied product photograph is the default image, cart thumbnail and social-sharing image. No color selectors or unavailable variants.
-- Optional 360° view: a draped GLB with fabric normal/AO textures, a print integrated into the cloth shader, horizontal drag, keyboard rotation, inertia and a 38-second full rotation. Vertical touch scrolling stays native.
 - Lazy scenes and reduced-motion support. Sustained low frame rate reduces pixel density instead of disabling both scenes. The product photo remains available independently of WebGL.
 - Responsive editorial image strip, selection, preview stock/preorder states, sold-out restock sheet, size guide, persistent cart, sticky purchase action, quantity/stock limits.
 - Native modal dialogs with focus trapping/Escape, consent controls, newsletter and restock hooks, disclosure panels.
@@ -25,7 +24,7 @@ Open http://localhost:3000. Production: `npm run build && npm start`. Deploy wit
 ## Before launch
 
 1. Approve prices, authoritative inventory and shipping dates in `lib/catalog.ts`; replace preview fixtures with server catalogue data and remove preview labeling only after verification.
-2. Supply final campaign photography and validate the optional 3D garment against the production sample. The primary product photo is the exact user-approved image. The 3D mesh is an adapted draped garment, not a scan of the actual product. The type-based chrome wordmark approximates the reference; replace with original brand outlines if available.
+2. Supply final campaign photography. The primary product photo is the exact user-approved image. The type-based chrome wordmark approximates the reference; replace with original brand outlines if available.
 3. Provide production size measurements, legal entity/address/contact/VAT number, shipping costs/countries/terms, return address and withdrawal form. Legal pages are explicitly marked drafts and require approval.
 4. Implement `/api/checkout` behind `onCheckout(cart)` in `lib/integrations.ts`. Re-read product prices/inventory server-side; never trust browser totals. Support Bancontact/cards/wallets. Confirm preorder dispatch dates before accepting checkout and repeat them in order confirmation. Implement verified, idempotent payment webhooks before emitting `purchase`.
 5. Implement `/api/subscribe` behind `onSubscribe(email, context)`. Validate variant context, add rate limiting and provider double opt-in; persist consent and variant context only under the approved privacy policy. Send a pending-confirmation response only after the provider accepts the request. No provider is currently configured and no address is saved.
