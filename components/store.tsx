@@ -192,7 +192,7 @@ const COUNTRIES: [string, string][] = [
 
 const SIZE_ROWS = ["XS", "S", "M", "L", "XL", "XXL"] as const;
 const PRODUCT_CM: Record<string, (string | number)[]> = {
-  "Lengte achterkant": [60, 63, 66, 69, 71, 72],
+  "Lengte achterkant": [60, 63, 66, 69, 71, 71.5],
   "Schouderbreedte": [52, 53.5, 55, 57, 59, 61],
   "Lichaamsbreedte": [53.5, 56.5, 59.5, 63.5, 67.5, 70.5],
   "Mouwlengte (middenachter)": [46, 48, 50, 52, 53, 54],
