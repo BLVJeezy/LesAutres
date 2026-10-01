@@ -740,6 +740,36 @@ export default function Store({
             </div>
           </div>
         </section>
+        <section className="anthem real-drop" id="in-real-life">
+          <div className="anthem-frame">
+            <video
+              src="/video/drop-001-unboxing.mp4"
+              poster="/video/drop-001-unboxing-poster.jpg"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              aria-label="Verpakte Baddies Tees van Drop 001, klaar om te verzenden"
+            />
+          </div>
+          <div className="anthem-copy">
+            <span className="micro">IN REAL LIFE</span>
+            <h2>
+              FRESH OFF
+              <br />
+              <span>THE PRESS.</span>
+            </h2>
+            <p>
+              Geen render, geen mock-up. Drop 001 ligt hier: echt katoen, echte print, verpakt en klaar om naar
+              jou te vertrekken.
+            </p>
+            <a href="#drop" className="buy">
+              <span>CLAIM JE TEE — {money(price)}</span>
+              <ArrowUpRight size={20} />
+            </a>
+          </div>
+        </section>
         <section className="anthem" id="anthem">
           <AnthemVideo />
           <div className="anthem-copy">
