@@ -2217,3 +2217,17 @@ footer {
   font-weight: 600;
   border-right: 1px solid var(--border);
 }
+
+/* In real life video: mirrored anthem layout */
+@media (min-width: 701px) {
+  .real-drop {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    background: radial-gradient(ellipse at 80% 50%, var(--accent-dim), transparent 60%);
+  }
+  .real-drop .anthem-frame {
+    order: 2;
+  }
+}
+.real-drop .anthem-frame video {
+  cursor: default;
+}
