@@ -339,6 +339,12 @@ function CheckoutForm({
   );
 }
 
+/** Extra video slides shown after the photos in the product gallery. */
+const PRODUCT_VIDEOS: Record<string, string[]> = {
+  "baddies-tee": ["/video/drop-001-unboxing.mp4"],
+  "preview-baddies-tee": ["/video/drop-001-unboxing.mp4"],
+};
+
 function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
   const [index, setIndex] = useState(0);
   const track = useRef<HTMLDivElement>(null);
@@ -358,12 +364,26 @@ function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
       >
         {images.map((src, i) => (
           <div className="gallery-slide" key={src + i}>
-            <ProductImage
-              className="official-product-photo custom"
-              src={src}
-              alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
-              sizes="(max-width: 700px) 100vw, 50vw"
-            />
+            {src.endsWith(".mp4") ? (
+              <video
+                className="official-product-photo custom gallery-video"
+                src={src}
+                poster={src.replace(/\.mp4$/, "-poster.jpg")}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                aria-label={`${alt} — video`}
+              />
+            ) : (
+              <ProductImage
+                className="official-product-photo custom"
+                src={src}
+                alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+                sizes="(max-width: 700px) 100vw, 50vw"
+              />
+            )}
           </div>
         ))}
       </div>
@@ -633,7 +653,10 @@ export default function Store({
             </div>
             <div className="product-render">
                 <ProductGallery
-                  images={featured.images?.length ? featured.images : [featured.image]}
+                  images={[
+                    ...(featured.images?.length ? featured.images : [featured.image]),
+                    ...(PRODUCT_VIDEOS[featured.id] ?? []),
+                  ]}
                   alt={featured.name}
                 />
             </div>
@@ -738,36 +761,6 @@ export default function Store({
                 </details>
               ))}
             </div>
-          </div>
-        </section>
-        <section className="anthem real-drop" id="in-real-life">
-          <div className="anthem-frame">
-            <video
-              src="/video/drop-001-unboxing.mp4"
-              poster="/video/drop-001-unboxing-poster.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label="Verpakte Baddies Tees van Drop 001, klaar om te verzenden"
-            />
-          </div>
-          <div className="anthem-copy">
-            <span className="micro">IN REAL LIFE</span>
-            <h2>
-              FRESH OFF
-              <br />
-              <span>THE PRESS.</span>
-            </h2>
-            <p>
-              Geen render, geen mock-up. Drop 001 ligt hier: echt katoen, echte print, verpakt en klaar om naar
-              jou te vertrekken.
-            </p>
-            <a href="#drop" className="buy">
-              <span>CLAIM JE TEE — {money(price)}</span>
-              <ArrowUpRight size={20} />
-            </a>
           </div>
         </section>
         <section className="anthem" id="anthem">
