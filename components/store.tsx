@@ -157,8 +157,8 @@ const photos = [
     alt: "Man in de Baddies Tee tegen een roestige stalen pilaar op een bouwwerf",
   },
   {
-    src: "/images/perspective-drop.jpg",
-    alt: "Chromen DROP 001 letters met de Baddies Tee erin weerspiegeld",
+    src: "/images/perspective-labels.jpg",
+    alt: "Les Autres-nekbedrukking in witte Baddies Tees, 100% katoen",
   },
   {
     src: "/images/perspective-print.jpg",
