@@ -21,7 +21,7 @@ function Brand({ className }: { className: string }) {
 export default async function Panel({ children }: { children: ReactNode }) {
   await requireAdmin();
   const openOrders = firebaseConfigured()
-    ? (await listOrders().catch(() => [])).filter((o) => !o.shippedAt && o.refunded < o.total)
+    ? (await listOrders().catch(() => [])).filter((o) => !o.test && !o.shippedAt && o.refunded < o.total)
         .length
     : 0;
   return (

@@ -58,7 +58,7 @@ export default async function Dashboard({
   const [realOrders, products] = await Promise.all([listOrders(), adminProducts()]);
   const allOrders = demo
     ? demoOrders(products[0]?.id ?? "baddies-tee", products[0]?.price || 4495, products[0]?.cost || 900, now)
-    : realOrders;
+    : realOrders.filter((o) => !o.test);
   const orders = allOrders.filter((o) => (since === undefined || o.created >= since) && o.created < until);
   const numbers = orderNumbers(allOrders);
 

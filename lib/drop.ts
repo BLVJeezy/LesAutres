@@ -16,7 +16,7 @@ export const isCartId = (v: unknown): v is string => typeof v === "string" && /^
 async function soldUnits() {
   const orders = await listOrders();
   return orders
-    .filter((o) => o.refunded < o.total)
+    .filter((o) => !o.test && o.refunded < o.total)
     .reduce((n, o) => n + o.lines.filter((l) => BUNDLE_PRODUCTS.includes(l[0])).reduce((m, l) => m + l[2], 0), 0);
 }
 

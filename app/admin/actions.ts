@@ -18,6 +18,7 @@ const validImage = (u: unknown) =>
 import {
   createProduct,
   setOrderRefunded,
+  setOrderTest,
   setOrderShipped,
   shipOrder,
   updateProduct,
@@ -124,6 +125,14 @@ export async function shipOrderAction(_: FormState, form: FormData): Promise<For
   if (!r.ok) return { error: "Bestelling niet gevonden." };
   revalidatePath("/admin", "layout");
   return { ok: r.mailed ? "Verzonden. De klant kreeg een e-mail met de trackinglink." : "Verzonden. (Geen e-mail verstuurd: e-mail is niet ingesteld of de code is ongewijzigd.)" };
+}
+
+export async function toggleTestAction(form: FormData) {
+  await guard();
+  if (await setOrderTest(String(form.get("orderId") ?? ""), form.get("test") === "1")) {
+    revalidatePath("/");
+    revalidatePath("/admin", "layout");
+  }
 }
 
 export async function toggleRefundedAction(form: FormData) {
