@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { money, sizes, totalStock, VAT_RATE } from "@/lib/catalog";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
 import { demoOrders } from "@/lib/demo";
+import { UNLIMITED_STOCK } from "@/lib/bundles";
 import { SalesChart, type Day } from "./sales-chart";
 
 const PERIODS = { today: "Vandaag", "48h": "48 uur", "7": "7 dagen", "30": "30 dagen", "90": "90 dagen", all: "Alles" } as const;
@@ -104,7 +105,7 @@ export default async function Dashboard({
       perProduct.set(id, row);
     }
   const productOf = (id: string) => products.find((p) => p.id === id);
-  const lowStock = products
+  const lowStock = UNLIMITED_STOCK ? [] : products
     .flatMap((p) => sizes.filter((s) => p.active && p.stock[s] <= 2).map((s) => ({ p, s })))
     .slice(0, 8);
 

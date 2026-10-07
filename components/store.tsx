@@ -33,6 +33,7 @@ import {
   type ShopProduct,
 } from "@/lib/catalog";
 import { company } from "@/lib/company";
+import { BUNDLE_PRODUCTS, BUNDLES, bundlePriceFor, cartDiscount } from "@/lib/bundles";
 import { FREE_FROM, SHIPPING_OPTIONS, shippingFee, type ShippingId } from "@/lib/shipping";
 import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
@@ -246,6 +247,78 @@ function SizeGuide() {
           ? "Afmetingen van het shirt, plat gemeten. Kleine afwijkingen van 1–2 cm zijn mogelijk."
           : "Jouw lichaamsmaten. Twijfel je tussen twee maten, kies dan de grootste voor de boxy look."}
       </p>
+    </div>
+  );
+}
+
+function BundlePicker({
+  unit,
+  defaultSize,
+  onAdd,
+}: {
+  unit: number;
+  defaultSize?: Size;
+  onAdd: (sizes: Size[]) => void;
+}) {
+  const [qty, setQty] = useState<number>(2);
+  const [picked, setPicked] = useState<Size[]>([]);
+  const sizeAt = (i: number) => picked[i] ?? defaultSize ?? "M";
+  const price = bundlePriceFor(qty, unit);
+  return (
+    <div className="bundles">
+      <div className="selector-head">
+        <span>02 — BUNDEL &amp; BESPAAR</span>
+        <span className="micro">MIX JE MATEN</span>
+      </div>
+      <div className="bundle-options" role="radiogroup" aria-label="Aantal tees">
+        {BUNDLES.map((b) => {
+          const total = bundlePriceFor(b.qty, unit);
+          const save = b.qty * unit - total;
+          return (
+            <button
+              key={b.qty}
+              role="radio"
+              aria-checked={qty === b.qty}
+              className={qty === b.qty ? "selected" : ""}
+              onClick={() => setQty(b.qty)}
+            >
+              <b>{b.label.toUpperCase()}</b>
+              <span>{money(total)}</span>
+              <small>{save > 0 ? `Bespaar ${money(save)}` : "Per stuk"}</small>
+            </button>
+          );
+        })}
+      </div>
+      <div className="bundle-sizes">
+        {Array.from({ length: qty }, (_, i) => (
+          <label key={i}>
+            <span>TEE {i + 1}</span>
+            <select
+              value={sizeAt(i)}
+              onChange={(e) => {
+                const next = Array.from({ length: 3 }, (_, j) => sizeAt(j));
+                next[i] = e.target.value as Size;
+                setPicked(next);
+              }}
+            >
+              {sizes.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+        ))}
+      </div>
+      <button
+        className="buy bundle-add"
+        onClick={() => onAdd(Array.from({ length: qty }, (_, i) => sizeAt(i)))}
+      >
+        <span>
+          {qty === 1 ? "1 TEE" : `${qty} TEES`} IN WINKELMAND — {money(price)}
+        </span>
+        <ArrowUpRight size={22} />
+      </button>
     </div>
   );
 }
@@ -516,6 +589,7 @@ export default function Store({
     (n, i) => n + i.quantity * (productOf(i.productId)?.price ?? 0),
     0,
   );
+  const discount = cartDiscount(cart, (id) => productOf(id)?.price ?? 0);
   function addProduct(productId: string, s: Size) {
     setCart((previous) =>
       addItem(previous, { productId, size: s, quantity: 1 }, products),
@@ -526,6 +600,14 @@ export default function Store({
   }
   function add() {
     if (size) addProduct(featured.id, size);
+  }
+  function addBundle(picked: Size[]) {
+    setCart((previous) =>
+      picked.reduce((acc, s) => addItem(acc, { productId: featured.id, size: s, quantity: 1 }, products), previous),
+    );
+    trackEvent("add_to_cart", { productId: featured.id, bundle: picked.length, sizes: picked });
+    setError("");
+    setSheet("cart");
   }
   function chooseSize(s: Size) {
     if (soldOut(s)) {
@@ -711,6 +793,9 @@ export default function Store({
               )}
             </div>
             {cta}
+            {BUNDLE_PRODUCTS.includes(featured.id) && (
+              <BundlePicker unit={price} defaultSize={size} onAdd={addBundle} />
+            )}
             <div className="trust">
               <span>
                 <Truck /> Vanuit België
@@ -1020,9 +1105,15 @@ export default function Store({
                   );
                 })}
               </div>
+              {discount > 0 && (
+                <div className="cart-total cart-discount">
+                  <span>BUNDELKORTING</span>
+                  <b>−{money(discount)}</b>
+                </div>
+              )}
               <div className="cart-total">
                 <span>SUBTOTAAL</span>
-                <b>{money(total)}</b>
+                <b>{money(total - discount)}</b>
               </div>
               <p className="tiny">
                 Inclusief btw · gratis verzending vanaf € 50 · veilig betalen via Revolut.
@@ -1030,7 +1121,7 @@ export default function Store({
               {checkoutStep ? (
                 <CheckoutForm
                   busy={busy}
-                  subtotal={total}
+                  subtotal={total - discount}
                   onSubmit={async (customer, shipping) => {
                     setBusy(true);
                     setError("");

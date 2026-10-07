@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { randomBytes } from "node:crypto";
+import { UNLIMITED_STOCK } from "./bundles";
 import { shippingFee, shippingLabel, type ShippingId } from "./shipping";
 import { customerEmail, mailConfigured, sendMail, shopEmail, type MailLine } from "./mail";
 import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
@@ -161,6 +162,7 @@ export function encodeLines(cart: CartItem[], products: ShopProduct[]): OrderLin
 }
 
 export async function adjustStock(lines: OrderLine[], direction: -1 | 1) {
+  if (UNLIMITED_STOCK) return;
   const db = firestore();
   if (!db) return;
   const byProduct = new Map<string, OrderLine[]>();
@@ -190,6 +192,8 @@ export type Order = {
   /** Delivery method id (bpost, gls, ups, ceo) and its fee in cents; included in total. */
   shippingMethod: string;
   shippingFee: number;
+  /** Bundle discount in cents, already subtracted from total. */
+  discount: number;
   total: number;
   refunded: number;
   fee: number;
@@ -227,6 +231,7 @@ function fromDoc(d: OrderDoc): Order {
     lines,
     shippingMethod: d.shippingMethod ?? "",
     shippingFee: d.shippingFee ?? 0,
+    discount: d.discount ?? 0,
     total: d.total ?? 0,
     refunded: d.refunded ?? 0,
     fee,
@@ -242,6 +247,7 @@ export type Checkout = {
   customer: NewOrder["customer"];
   shipping: NewOrder["shipping"];
   shippingMethod: ShippingId;
+  discount: number;
   description: string;
   origin: string;
 };
@@ -251,7 +257,7 @@ export async function startCheckout(c: Checkout): Promise<string> {
   const db = firestore();
   if (!db) throw new Error("Firebase is niet geconfigureerd.");
   const id = `LA-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
-  const subtotal = c.lines.reduce((n, l) => n + l[2] * l[3], 0);
+  const subtotal = c.lines.reduce((n, l) => n + l[2] * l[3], 0) - c.discount;
   const fee = shippingFee(c.shippingMethod, subtotal);
   const total = subtotal + fee;
   const s = c.shipping;
@@ -267,6 +273,7 @@ export async function startCheckout(c: Checkout): Promise<string> {
     lines: c.lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
     shippingMethod: c.shippingMethod,
     shippingFee: fee,
+    discount: c.discount,
     total,
     refunded: 0,
     fee: 0,

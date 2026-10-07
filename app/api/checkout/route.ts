@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { MAX_CART_LINES, sizes, type CartItem } from "@/lib/catalog";
 import { firebaseConfigured } from "@/lib/firebase";
 import { revolutConfigured } from "@/lib/revolut";
+import { cartDiscount, withUnlimitedStock } from "@/lib/bundles";
 import { isShippingId } from "@/lib/shipping";
 import { encodeLines, listProducts, startCheckout, type Checkout } from "@/lib/shop";
 
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const products = await listProducts();
+    const products = (await listProducts()).map(withUnlimitedStock);
     for (const item of cart) {
       const p = products.find((x) => x.id === item.productId);
       if (!p || p.price <= 0 || p.stock[item.size] < item.quantity) {
@@ -113,6 +114,7 @@ export async function POST(request: Request) {
       lines: encodeLines(cart, products),
       ...who,
       shippingMethod,
+      discount: cartDiscount(cart, (id) => products.find((p) => p.id === id)?.price ?? 0),
       description,
       origin,
     });

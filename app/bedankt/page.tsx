@@ -60,6 +60,12 @@ export default async function Bedankt({
               </li>
             ))}
           </ul>
+          {summary.order.discount > 0 && (
+            <p className="thanks-total thanks-ship">
+              <span>BUNDELKORTING</span>
+              <span>−{money(summary.order.discount)}</span>
+            </p>
+          )}
           <p className="thanks-total thanks-ship">
             <span>VERZENDING · {shippingLabel(summary.order.shippingMethod).toUpperCase()}</span>
             <span>{summary.order.shippingFee ? money(summary.order.shippingFee) : "Gratis"}</span>

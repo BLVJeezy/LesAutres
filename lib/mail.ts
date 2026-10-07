@@ -60,6 +60,10 @@ function totals(order: Order) {
   return `
       <tr><td style="padding-top:16px">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${order.discount ? `<tr>
+            <td style="font:12px monospace;color:#d595a4;padding-bottom:8px">BUNDELKORTING</td>
+            <td style="text-align:right;font:13px monospace;color:#d595a4;padding-bottom:8px">−${money(order.discount)}</td>
+          </tr>` : ""}
           <tr>
             <td style="font:12px monospace;color:#989a92;padding-bottom:8px">VERZENDING · ${esc(shippingLabel(order.shippingMethod).toUpperCase())}</td>
             <td style="text-align:right;font:13px monospace;color:#efeee8;padding-bottom:8px">${order.shippingFee ? money(order.shippingFee) : "Gratis"}</td>
@@ -106,6 +110,7 @@ export function customerEmail(order: Order, number: string, lines: MailLine[]) {
     `Je bestelling ${number} is bevestigd. Zodra je pakket vertrekt, sturen we je een trackinglink.`,
     ``,
     ...lines.map((l) => `- ${l.name}, maat ${l.size} × ${l.qty}: ${money(l.price * l.qty)}`),
+    ...(order.discount ? [`Bundelkorting: −${money(order.discount)}`] : []),
     `Verzending (${shippingLabel(order.shippingMethod)}): ${order.shippingFee ? money(order.shippingFee) : "gratis"}`,
     `Totaal (incl. btw): ${money(order.total)}`,
     ``,
