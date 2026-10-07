@@ -2,7 +2,8 @@ import { cache } from "react";
 import { randomBytes } from "node:crypto";
 import { UNLIMITED_STOCK } from "./bundles";
 import { shippingFee, shippingLabel, type ShippingId } from "./shipping";
-import { customerEmail, mailConfigured, sendMail, shopEmail, type MailLine } from "./mail";
+import { customerEmail, mailConfigured, sendMail, shippedEmail, shopEmail, type MailLine } from "./mail";
+import { trackingUrl, type CarrierId } from "./tracking";
 import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
 import { firestore } from "./firebase";
 import {
@@ -201,19 +202,25 @@ export type Order = {
   vat: number;
   profit: number;
   shippedAt: number | null;
+  trackingCarrier?: string;
+  trackingCode?: string;
+  trackingUrl?: string | null;
+  shippedMailAt?: number | null;
 };
 
 const exVat = (cents: number) => Math.round(cents / (1 + VAT_RATE));
 const ORDERS = "orders";
 
 /** Firestore has no nested arrays, so lines are stored as objects. */
-type OrderDoc = Omit<Order, "lines"> & {
+export type OrderDoc = Omit<Order, "lines"> & {
   status: "pending" | "paid";
+  checkoutUrl?: string | null;
+  reminderSentAt?: number | null;
   lines: { productId: string; size: Size; qty: number; price: number; cost: number }[];
   updatedAt: number;
 };
 
-function fromDoc(d: OrderDoc): Order {
+export function fromDoc(d: OrderDoc): Order {
   const lines = (d.lines ?? []).map((l) => [l.productId, l.size, l.qty, l.price, l.cost] as OrderLine);
   const net = (d.total ?? 0) - (d.refunded ?? 0);
   const fullyRefunded = d.total > 0 && net <= 0;
@@ -239,6 +246,10 @@ function fromDoc(d: OrderDoc): Order {
     vat,
     profit: net - vat - fee - cost,
     shippedAt: d.shippedAt ?? null,
+    trackingCarrier: d.trackingCarrier ?? "",
+    trackingCode: d.trackingCode ?? "",
+    trackingUrl: d.trackingUrl ?? null,
+    shippedMailAt: d.shippedMailAt ?? null,
   };
 }
 
@@ -295,7 +306,10 @@ export async function startCheckout(c: Checkout): Promise<string> {
     customer: c.customer,
     shipping: c.shipping,
   });
-  await db.collection(ORDERS).doc(id).update({ paymentId: order.id, updatedAt: Date.now() });
+  await db
+    .collection(ORDERS)
+    .doc(id)
+    .update({ paymentId: order.id, checkoutUrl: order.checkout_url ?? null, updatedAt: Date.now() });
   if (!order.checkout_url) throw new Error("Revolut gaf geen betaalpagina terug.");
   return order.checkout_url;
 }
@@ -378,6 +392,38 @@ export async function setOrderShipped(orderId: string, shipped: boolean) {
   if (!(await ref.get()).exists) return false;
   await ref.update({ shippedAt: shipped ? Math.floor(Date.now() / 1000) : null, updatedAt: Date.now() });
   return true;
+}
+
+/** Marks the order shipped with tracking info and e-mails the customer (once per tracking code). */
+export async function shipOrder(orderId: string, carrier: CarrierId, code: string) {
+  const db = firestore();
+  if (!db) return { ok: false, mailed: false };
+  const ref = db.collection(ORDERS).doc(orderId);
+  const snap = await ref.get();
+  if (!snap.exists) return { ok: false, mailed: false };
+  const d = snap.data() as OrderDoc;
+  const url = trackingUrl(carrier, code);
+  const changed = d.trackingCode !== code.trim() || d.trackingCarrier !== carrier;
+  await ref.update({
+    shippedAt: d.shippedAt ?? Math.floor(Date.now() / 1000),
+    trackingCarrier: carrier,
+    trackingCode: code.trim(),
+    trackingUrl: url,
+    updatedAt: Date.now(),
+  });
+  let mailed = false;
+  if ((changed || !d.shippedMailAt) && mailConfigured()) {
+    const s = await orderSummary(orderId);
+    if (s) {
+      try {
+        mailed = await sendMail(s.order.email, shippedEmail(s.order, s.number, s.lines), process.env.ORDER_NOTIFY_EMAIL);
+        if (mailed) await ref.update({ shippedMailAt: Date.now() });
+      } catch (error) {
+        console.error("Shipping e-mail failed", error);
+      }
+    }
+  }
+  return { ok: true, mailed };
 }
 
 export async function setOrderRefunded(orderId: string, refunded: boolean) {

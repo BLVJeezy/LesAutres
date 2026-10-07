@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { money, sizes, totalStock, VAT_RATE } from "@/lib/catalog";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
 import { demoOrders } from "@/lib/demo";
+import { funnel } from "@/lib/analytics";
 import { UNLIMITED_STOCK } from "@/lib/bundles";
 import { SalesChart, type Day } from "./sales-chart";
 
@@ -109,6 +110,25 @@ export default async function Dashboard({
     .flatMap((p) => sizes.filter((s) => p.active && p.stock[s] <= 2).map((s) => ({ p, s })))
     .slice(0, 8);
 
+  const funnelFrom = since === undefined ? "2000-01-01" : dayKey(since);
+  const funnelTo = dayKey(Math.min(until - 1, now));
+  const counts = demo
+    ? {
+        page_view: orders.length * 41,
+        view_product: orders.length * 29,
+        add_to_cart: orders.length * 6,
+        begin_checkout: Math.round(orders.length * 2.3),
+      }
+    : await funnel(funnelFrom, funnelTo).catch(() => null);
+  const steps: [string, number][] = counts
+    ? [
+        ["Bezoekers", counts.page_view],
+        ["Product bekeken", counts.view_product],
+        ["In winkelmand", counts.add_to_cart],
+        ["Naar checkout", counts.begin_checkout],
+        ["Betaald", orders.length],
+      ]
+    : [];
   const kpis: [string, string, string?][] = [
     ["Omzet", money(revenue), "incl. btw"],
     ["Bestellingen", String(orders.length), `${units} stuks`],
@@ -193,6 +213,42 @@ export default async function Dashboard({
                 </ul>
               ) : (
                 <p className="admin-note">Alles is verzonden.</p>
+              )}
+            </div>
+          </section>
+
+          <section className="admin-card">
+            <div className="admin-card-head">
+              <h2>Conversie</h2>
+              <span className="admin-muted">alleen bezoekers die cookies accepteren</span>
+            </div>
+            <div className="admin-card-body">
+              {steps.length && steps[0][1] > 0 ? (
+                <ul className="admin-funnel">
+                  {steps.map(([label, n], i) => {
+                    const pct = steps[0][1] ? (n / steps[0][1]) * 100 : 0;
+                    const prev = i ? steps[i - 1][1] : 0;
+                    return (
+                      <li key={label}>
+                        <div>
+                          <span>{label}</span>
+                          <b>{n.toLocaleString("nl-BE")}</b>
+                        </div>
+                        <i>
+                          <em style={{ width: `${Math.max(1, Math.min(100, pct))}%` }} />
+                        </i>
+                        <small>
+                          {i === 0 ? "100%" : `${pct.toFixed(1)}% van bezoekers${prev ? ` · ${((n / prev) * 100).toFixed(0)}% van vorige stap` : ""}`}
+                        </small>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <p className="admin-note">
+                  Nog geen gegevens in deze periode. Bezoeken worden geteld vanaf nu, voor bezoekers die cookies
+                  accepteren.
+                </p>
               )}
             </div>
           </section>

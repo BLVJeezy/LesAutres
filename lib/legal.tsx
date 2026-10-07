@@ -185,7 +185,8 @@ export const legalPages: Record<string, Page> = {
               <b>Bestellingen</b>: naam, e-mailadres, telefoonnummer (optioneel), verzendadres, bestelde artikelen,
               bedrag en betaalstatus. Nodig om je bestelling te leveren, je te informeren en voor garantie of retour
               (uitvoering van de overeenkomst). We bewaren ze ook voor onze boekhouding en btw-aangifte (wettelijke
-              verplichting).
+              verplichting). Rond je de betaling niet af, dan sturen we je eenmalig een herinnering per e-mail
+              (gerechtvaardigd belang). Wanneer je pakket vertrekt, mailen we je de trackinglink.
             </li>
             <li>
               <b>Betaling</b>: je kaart- of rekeninggegevens gaan rechtstreeks naar Revolut. Wij zien die nooit; we
@@ -293,6 +294,7 @@ export const legalPages: Record<string, Page> = {
           <ul>
             <li><b>la-cart</b> (lokale opslag, noodzakelijk): je winkelmand, zodat die niet verdwijnt. Blijft tot je bestelt of hem leegmaakt.</li>
             <li><b>la-consent</b> (lokale opslag, noodzakelijk): je keuze in de cookiemelding.</li>
+            <li><b>la-cart-id</b> (lokale opslag, noodzakelijk): een willekeurige code voor je winkelmand, zodat je tees 10 minuten voor jou gereserveerd blijven.</li>
             <li><b>la_admin</b> (cookie, noodzakelijk): alleen voor beheerders die inloggen op het beheer van de shop; vervalt na 12 uur.</li>
           </ul>
         ),
@@ -310,8 +312,10 @@ export const legalPages: Record<string, Page> = {
         title: "Analytics",
         body: (
           <p>
-            Er is momenteel geen analytics actief. Voegen we dat later toe, dan gebeurt dat alleen als je daar
-            toestemming voor geeft in de cookiemelding, en passen we dit beleid aan.
+            Alleen als je in de cookiemelding op &ldquo;Accepteren&rdquo; klikt, tellen we anoniem hoeveel bezoekers de shop
+            bekijken, iets in hun winkelmand leggen en naar de checkout gaan. We plaatsen daarvoor geen cookies en
+            bewaren geen IP-adres of andere persoonsgegevens: we verhogen alleen een teller per dag. Kies je
+            &ldquo;Alleen noodzakelijk&rdquo;, dan wordt er niets geteld.
           </p>
         ),
       },
