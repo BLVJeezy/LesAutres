@@ -17,12 +17,11 @@ export const BUNDLES = [
   { qty: 3, label: "3 tees", price: 10995 },
 ] as const;
 
-/** Best price for `qty` units of a bundle product: as many 3-packs as possible, then a 2-pack, then single. */
+/** Price for `qty` units of a bundle product: 2 = 2-pack, 3 or more = every tee at the 3-pack rate (the maximum discount). */
 export function bundleTotal(qty: number, unit: number) {
   const [, two, three] = BUNDLES;
-  let total = Math.floor(qty / 3) * three.price;
-  const rest = qty % 3;
-  total += rest === 2 ? two.price : rest === 1 ? unit : 0;
+  if (qty <= 0) return 0;
+  const total = qty === 1 ? unit : qty === 2 ? two.price : Math.round((three.price / 3) * qty);
   return Math.min(total, qty * unit);
 }
 

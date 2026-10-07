@@ -6,8 +6,8 @@ test("bundle totals", () => {
   assert.equal(bundleTotal(1, 4495), 4495);
   assert.equal(bundleTotal(2, 4495), 7995);
   assert.equal(bundleTotal(3, 4495), 10995);
-  assert.equal(bundleTotal(4, 4495), 10995 + 4495);
-  assert.equal(bundleTotal(5, 4495), 10995 + 7995);
+  assert.equal(bundleTotal(4, 4495), 14660);
+  assert.equal(bundleTotal(5, 4495), 18325);
   assert.equal(bundleTotal(6, 4495), 2 * 10995);
 });
 

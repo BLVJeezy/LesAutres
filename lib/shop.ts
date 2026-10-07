@@ -248,6 +248,8 @@ export type Checkout = {
   shipping: NewOrder["shipping"];
   shippingMethod: ShippingId;
   discount: number;
+  /** Bag id whose drop reservation is released once paid. */
+  cartId?: string;
   description: string;
   origin: string;
 };
@@ -274,6 +276,7 @@ export async function startCheckout(c: Checkout): Promise<string> {
     shippingMethod: c.shippingMethod,
     shippingFee: fee,
     discount: c.discount,
+    ...(c.cartId && { cartId: c.cartId }),
     total,
     refunded: 0,
     fee: 0,
@@ -323,6 +326,8 @@ export async function confirmOrder(id: string): Promise<boolean> {
     return true;
   });
   if (first) {
+    const cartId = (d as { cartId?: string }).cartId;
+    if (cartId) await db.collection("reservations").doc(cartId).delete().catch(() => {});
     await adjustStock(fromDoc(d).lines, -1);
     await sendOrderEmails(id).catch((error) => console.error("Order e-mails failed", error));
   }

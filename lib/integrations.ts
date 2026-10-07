@@ -52,12 +52,12 @@ export const EMPTY_CUSTOMER: Customer = {
   city: "",
   country: "BE",
 };
-export async function onCheckout(cart: CartItem[], customer: Customer, shippingMethod: string) {
+export async function onCheckout(cart: CartItem[], customer: Customer, shippingMethod: string, cartId?: string) {
   trackEvent("begin_checkout", { cart });
   const response = await fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ cart, customer, shippingMethod }),
+    body: JSON.stringify({ cart, customer, shippingMethod, cartId }),
   });
   const data = await response.json();
   if (!response.ok) throw new Error(data.error);

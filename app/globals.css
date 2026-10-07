@@ -2374,3 +2374,100 @@ footer {
 .real-drop .anthem-frame video {
   cursor: default;
 }
+
+/* Drop counter + reservation */
+.drop-counter {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff8;
+}
+.drop-counter > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  font: 600 11px monospace;
+  letter-spacing: 1px;
+}
+.drop-counter > div span:last-child {
+  color: var(--text-dim);
+  font-weight: 400;
+}
+.drop-counter i {
+  display: block;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.drop-counter i b {
+  display: block;
+  height: 100%;
+  background: var(--pink);
+  border-radius: inherit;
+}
+.drop-counter.low > div span:first-child {
+  color: var(--pink);
+}
+.reservation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: var(--accent-dim);
+  font: 12px monospace;
+}
+.reservation b {
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.reservation.expired {
+  background: var(--surface);
+}
+.bundle-options {
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 701px) {
+  .bundle-options {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.bundle-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+  font: 11px monospace;
+  letter-spacing: 1px;
+}
+.bundle-stepper button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+}
+.bundle-stepper b {
+  min-width: 24px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.payment-logos {
+  margin: 18px 0 6px;
+}
+.payment-logos img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 520px;
+  margin: 0 auto;
+}

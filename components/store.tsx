@@ -255,11 +255,13 @@ function BundlePicker({
   unit,
   image,
   defaultSize,
+  maxQty,
   onAdd,
 }: {
   unit: number;
   image: string;
   defaultSize?: Size;
+  maxQty: number;
   onAdd: (sizes: Size[]) => void;
 }) {
   const [qty, setQty] = useState<number>(2);
@@ -299,7 +301,35 @@ function BundlePicker({
             </button>
           );
         })}
+        <button
+          role="radio"
+          aria-checked={qty > 3}
+          className={`bundle-more ${qty > 3 ? "selected" : ""}`}
+          onClick={() => setQty((q) => (q > 3 ? q : 4))}
+        >
+          <span className="bundle-thumbs n3" aria-hidden>
+            {Array.from({ length: 3 }, (_, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={i} src={image} alt="" loading="lazy" />
+            ))}
+          </span>
+          <b>4+ TEES</b>
+          <span className="bundle-price">{money(Math.round(BUNDLES[2].price / 3))}</span>
+          <small>per stuk · zelfde topkorting</small>
+        </button>
       </div>
+      {qty > 3 && (
+        <div className="bundle-stepper">
+          <span>AANTAL TEES</span>
+          <button aria-label="Minder" onClick={() => setQty((q) => Math.max(4, q - 1))} disabled={qty <= 4}>
+            <Minus size={14} />
+          </button>
+          <b>{qty}</b>
+          <button aria-label="Meer" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty}>
+            <Plus size={14} />
+          </button>
+        </div>
+      )}
       <div className="bundle-sizes">
         {Array.from({ length: qty }, (_, i) => (
           <label key={i}>
@@ -307,7 +337,7 @@ function BundlePicker({
             <select
               value={sizeAt(i)}
               onChange={(e) => {
-                const next = Array.from({ length: 3 }, (_, j) => sizeAt(j));
+                const next = Array.from({ length: Math.max(qty, picked.length) }, (_, j) => sizeAt(j));
                 next[i] = e.target.value as Size;
                 setPicked(next);
               }}
@@ -323,6 +353,7 @@ function BundlePicker({
       </div>
       <button
         className="buy bundle-add"
+        disabled={qty > maxQty}
         onClick={() => onAdd(Array.from({ length: qty }, (_, i) => sizeAt(i)))}
       >
         <span>
@@ -550,6 +581,10 @@ export default function Store({
   const [consent, setConsent] = useState<string | null>("loading");
   const [sticky, setSticky] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [cartId, setCartId] = useState("");
+  const [drop, setDrop] = useState<{ limit: number; remaining: number } | null>(null);
+  const [reservedUntil, setReservedUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const viewer = useRef<HTMLDivElement>(null);
   const stock = size ? featured.stock[size] : null;
   const soldOut = (s: Size) => featured.stock[s] <= 0;
@@ -574,6 +609,16 @@ export default function Store({
             ),
         );
     } catch {}
+    let id = localStorage.getItem("la-cart-id");
+    if (!id) {
+      id = crypto.randomUUID();
+      localStorage.setItem("la-cart-id", id);
+    }
+    setCartId(id);
+    fetch(`/api/drop?cart=${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => d && setDrop(d))
+      .catch(() => {});
     setLoaded(true);
     trackEvent("view_product", { product: "drop-001" });
   }, []);
@@ -595,6 +640,42 @@ export default function Store({
     0,
   );
   const discount = cartDiscount(cart, (id) => productOf(id)?.price ?? 0);
+  const dropQty = cart.filter((c) => BUNDLE_PRODUCTS.includes(c.productId)).reduce((n, c) => n + c.quantity, 0);
+  const left = drop ? drop.remaining : null;
+  const dropSoldOut = left !== null && left <= 0 && dropQty === 0;
+  async function reserveBag(qty: number) {
+    if (!cartId) return;
+    try {
+      const r = await fetch("/api/drop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cartId, qty }),
+      });
+      const d = await r.json();
+      if (typeof d.remaining === "number") setDrop({ limit: d.limit, remaining: d.remaining });
+      if (r.ok) {
+        setReservedUntil(d.expiresAt ?? null);
+      } else if (r.status === 409) {
+        setReservedUntil(null);
+        setError(
+          d.remaining
+            ? `Er zijn nog maar ${d.remaining} tees van Drop 001 beschikbaar. Pas je winkelmand aan.`
+            : "Drop 001 is uitverkocht.",
+        );
+      }
+    } catch {}
+  }
+  useEffect(() => {
+    if (loaded && cartId) reserveBag(dropQty);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dropQty, loaded, cartId]);
+  useEffect(() => {
+    if (!reservedUntil) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [reservedUntil]);
+  const msLeft = reservedUntil ? reservedUntil - now : 0;
+  const reservationLabel = `${String(Math.floor(Math.max(0, msLeft) / 60000)).padStart(2, "0")}:${String(Math.floor((Math.max(0, msLeft) % 60000) / 1000)).padStart(2, "0")}`;
   function addProduct(productId: string, s: Size) {
     setCart((previous) =>
       addItem(previous, { productId, size: s, quantity: 1 }, products),
@@ -627,11 +708,11 @@ export default function Store({
     <motion.button
       whileTap={{ scale: 0.985, y: 2 }}
       className="buy"
-      disabled={!size}
+      disabled={!size || dropSoldOut}
       onClick={add}
     >
       <span>
-        {!size ? "KIES JE MAAT" : "IN WINKELMAND"}
+        {dropSoldOut ? "UITVERKOCHT" : !size ? "KIES JE MAAT" : "IN WINKELMAND"}
         {size ? ` — ${money(price)}` : ""}
       </span>
       <ArrowUpRight size={22} />
@@ -764,6 +845,20 @@ export default function Store({
             {!live && (
               <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
             )}
+            {drop && (
+              <div className={`drop-counter ${left !== null && left <= 10 ? "low" : ""}`} aria-live="polite">
+                <div>
+                  <span>
+                    <span className="pink-dot" />{" "}
+                    {dropSoldOut ? "UITVERKOCHT" : `NOG ${Math.max(0, left ?? 0)} VAN ${drop.limit}`}
+                  </span>
+                  <span>GELIMITEERDE OPLAGE · DROP 001</span>
+                </div>
+                <i>
+                  <b style={{ width: `${Math.max(2, (1 - Math.max(0, left ?? 0) / drop.limit) * 100)}%` }} />
+                </i>
+              </div>
+            )}
             <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
             <div className="selector-head">
               <span>01 — MAAT</span>
@@ -796,7 +891,7 @@ export default function Store({
             </div>
             {cta}
             {BUNDLE_PRODUCTS.includes(featured.id) && (
-              <BundlePicker unit={price} image={featured.image} defaultSize={size} onAdd={addBundle} />
+              <BundlePicker unit={price} image={featured.image} defaultSize={size} maxQty={left === null ? 20 : Math.max(0, Math.min(20, left))} onAdd={addBundle} />
             )}
             <div className="trust">
               <span>
@@ -811,12 +906,14 @@ export default function Store({
                 Veilig betalen
               </span>
             </div>
-            <div className="payments">
-              <b>Revolut Pay</b>
-              <span>Apple Pay</span>
-              <span>G Pay</span>
-              <b>VISA</b>
-              <span>mastercard</span>
+            <div className="payment-logos">
+              <Image
+                src="/images/payment-methods.png"
+                alt="Betaal met Revolut Pay, Apple Pay, Google Pay, Visa of Mastercard"
+                width={1200}
+                height={96}
+                sizes="(max-width: 700px) 92vw, 460px"
+              />
             </div>
             {!live && (
               <p className="tiny delivery">
@@ -1137,6 +1234,23 @@ export default function Store({
                   );
                 })}
               </div>
+              {dropQty > 0 && reservedUntil && (
+                <div className={`reservation ${msLeft <= 0 ? "expired" : ""}`} role="status">
+                  {msLeft > 0 ? (
+                    <>
+                      <span>⏱ Voor jou gereserveerd</span>
+                      <b>{reservationLabel}</b>
+                    </>
+                  ) : (
+                    <>
+                      <span>Je reservering is verlopen.</span>
+                      <button className="text-button" onClick={() => reserveBag(dropQty)}>
+                        OPNIEUW RESERVEREN
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
               {discount > 0 && (
                 <div className="cart-total cart-discount">
                   <span>BUNDELKORTING</span>
@@ -1158,7 +1272,7 @@ export default function Store({
                     setBusy(true);
                     setError("");
                     try {
-                      await onCheckout(cart, customer, shipping);
+                      await onCheckout(cart, customer, shipping, cartId);
                     } catch (e) {
                       setError((e as Error).message);
                     } finally {
