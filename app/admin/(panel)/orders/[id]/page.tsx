@@ -158,7 +158,15 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
               </div>
               <div>
                 <div className="admin-note">Verzendadres</div>
-                {order.address || "—"}
+                {order.address ? order.address.split(", ").map((l, i) => <div key={i}>{l}</div>) : "—"}
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                  <a className="admin-btn" href={`/admin/labels?layout=a6&ids=${order.id}`} target="_blank" rel="noopener">
+                    Verzendlabel
+                  </a>
+                  <a className="admin-btn secondary" href={`/admin/packing?ids=${order.id}`} target="_blank" rel="noopener">
+                    Pakbon
+                  </a>
+                </div>
               </div>
             </div>
           </section>

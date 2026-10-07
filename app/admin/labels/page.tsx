@@ -22,40 +22,59 @@ const CSS = `
 .label-addr { font-size: 12pt; line-height: 1.3; }
 .label-meta { margin-top: auto; border-top: 0.3mm solid #111; padding-top: 2mm; display: flex; justify-content: space-between; gap: 4mm; font-size: 8pt; }
 .label-from { font-size: 7.5pt; color: #444; }
+.sheet-a6 { width: 105mm; height: 148mm; margin: 0 auto 16px; background: #fff; box-shadow: 0 2px 12px #0002; display: flex; }
+.sheet-a6 .label { width: 100%; border: 0; padding: 9mm 8mm; gap: 3.5mm; }
+.sheet-a6 .label-name { font-size: 20pt; }
+.sheet-a6 .label-addr { font-size: 15pt; }
+.sheet-a6 .label-top b { font-size: 16pt; }
+@media screen and (max-width: 500px) {
+  .labels-page { padding: 12px; }
+  .sheet-a6 { zoom: 0.85; }
+  .sheet-a4 { zoom: 0.44; }
+}
 @media print {
-  @page { size: A4; margin: 0; }
+  @page { size: var(--page-size); margin: 0; }
   .labels-page { background: #fff; padding: 0; }
   .labels-bar { display: none; }
-  .sheet-a4 { box-shadow: none; margin: 0; page-break-after: always; }
+  .sheet-a4, .sheet-a6 { box-shadow: none; margin: 0; zoom: 1 !important; }
+  .sheet-a4:not(:last-child), .sheet-a6:not(:last-child) { page-break-after: always; break-after: page; }
   .label { border-color: #ddd; }
 }`;
 
-export default async function Labels({ searchParams }: { searchParams: Promise<{ all?: string }> }) {
+export default async function Labels({
+  searchParams,
+}: {
+  searchParams: Promise<{ all?: string; ids?: string; layout?: string }>;
+}) {
   await requireAdmin();
-  const { all } = await searchParams;
+  const { all, ids, layout } = await searchParams;
+  const a6 = layout === "a6";
+  const picked = ids ? new Set(ids.split(",")) : null;
   const [orders, products] = await Promise.all([listOrders(), adminProducts()]);
   const numbers = orderNumbers(orders);
   const todo = orders
-    .filter((o) => !o.test && o.refunded < o.total && (all === "1" || !o.shippedAt))
+    .filter((o) => (picked ? picked.has(o.id) : !o.test && o.refunded < o.total && (all === "1" || !o.shippedAt)))
     .sort((a, b) => a.created - b.created);
   const name = (id: string) => products.find((p) => p.id === id)?.name ?? "Artikel";
   const from = [company.brand, returnAddress()].filter(Boolean).join(" · ") || `${company.brand} · België`;
   const pages: (typeof todo)[] = [];
-  for (let i = 0; i < todo.length; i += 8) pages.push(todo.slice(i, i + 8));
+  const per = a6 ? 1 : 8;
+  for (let i = 0; i < todo.length; i += per) pages.push(todo.slice(i, i + per));
 
   return (
     <div className="labels-page">
-      <style>{CSS}</style>
+      <style>{CSS.replace("var(--page-size)", a6 ? "105mm 148mm" : "A4")}</style>
       <div className="labels-bar">
         <p>
-          <b>{todo.length}</b> {todo.length === 1 ? "label" : "labels"} · A4, 8 per blad (105 × 74 mm).{" "}
-          {all === "1" ? <a href="/admin/labels">Alleen nog te verzenden</a> : <a href="/admin/labels?all=1">Ook verzonden bestellingen</a>}
+          <b>{todo.length}</b> {todo.length === 1 ? "label" : "labels"} ·{" "}
+          {a6 ? "1 per pagina (A6, 105 × 148 mm)" : "A4, 8 per blad (105 × 74 mm)"}.{" "}
+          <a href="/admin/orders/export?type=labels">Andere bestellingen kiezen</a>
         </p>
         <PrintButton />
       </div>
       {todo.length === 0 && <p style={{ textAlign: "center" }}>Geen bestellingen om te verzenden.</p>}
       {pages.map((page, i) => (
-        <div className="sheet-a4" key={i}>
+        <div className={a6 ? "sheet-a6" : "sheet-a4"} key={i}>
           {page.map((o) => {
             const lines = o.address
               ? o.address.split(", ").map((l) => COUNTRY[l] ?? l)

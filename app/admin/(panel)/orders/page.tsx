@@ -29,9 +29,14 @@ export default async function Orders({
     <>
       <div className="admin-head">
         <h1>Bestellingen</h1>
-        <a className="admin-btn secondary" href="/admin/labels" target="_blank" rel="noopener">
-          Verzendlabels printen
-        </a>
+        <div className="admin-head-actions">
+          <Link className="admin-btn secondary" href="/admin/orders/export?type=labels">
+            Export verzendlabels
+          </Link>
+          <Link className="admin-btn secondary" href="/admin/orders/export?type=orders">
+            Export orders (PDF)
+          </Link>
+        </div>
         {firebaseConfigured() && revolutConfigured() && !webhook && (
           <form action={setupRevolutWebhookAction}>
             <button className="admin-btn">Revolut-webhook instellen</button>

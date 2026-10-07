@@ -9,6 +9,7 @@ export function OrderRow({ href, children }: { href: string; children: ReactNode
       className="clickable"
       tabIndex={0}
       onClick={() => router.push(href)}
+      onPointerDown={() => router.prefetch(href)}
       onKeyDown={(e) => {
         if (e.key === "Enter") router.push(href);
       }}
