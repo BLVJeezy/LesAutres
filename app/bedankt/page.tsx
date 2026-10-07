@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { cookies, headers } from "next/headers";
+import { DICTS, LANG_COOKIE, detectLang, isLang } from "@/lib/i18n";
 import { money } from "@/lib/catalog";
 import { shippingLabel } from "@/lib/shipping";
 import { confirmOrder, orderSummary } from "@/lib/shop";
@@ -23,6 +25,10 @@ export default async function Bedankt({
 }) {
   const { order } = await searchParams;
   const summary = await load(order);
+  const saved = (await cookies()).get(LANG_COOKIE)?.value;
+  const d = DICTS[isLang(saved) ? saved : detectLang((await headers()).get("accept-language"))];
+  const t = d.thanks;
+  const { free, bundleDiscount: bundle, total } = d;
   return (
     <main className="thanks">
       <Link href="/" className="wordmark thanks-mark" aria-label="Les Autres, home">
@@ -32,16 +38,16 @@ export default async function Bedankt({
       {summary ? (
         <>
           <ClearCart />
-          <p className="micro">BESTELLING {summary.number} · BEVESTIGD</p>
+          <p className="micro">{t.confirmed(String(summary.number))}</p>
           <h1>
-            Bedankt,
+            {t.title[0]}
             <br />
-            je bent één van <span>Les Autres.</span>
+            {t.title[1]}<span>Les Autres.</span>
           </h1>
           <p className="thanks-lead">
-            Je betaling is gelukt. Je krijgt zo een bevestiging op{" "}
-            <b>{summary.order.email}</b>. Zodra je pakket vertrekt, volgt er een
-            trackinglink.
+            {t.lead("")[0]}
+            <b>{summary.order.email}</b>
+            {t.lead("")[2]}
           </p>
           <ul className="thanks-lines">
             {summary.lines.map((l, i) => (
@@ -53,7 +59,7 @@ export default async function Bedankt({
                 <div>
                   <b>{l.name}</b>
                   <span>
-                    MAAT {l.size} · {l.qty}×
+                    {t.size} {l.size} · {l.qty}×
                   </span>
                 </div>
                 <span>{money(l.price * l.qty)}</span>
@@ -62,32 +68,31 @@ export default async function Bedankt({
           </ul>
           {summary.order.discount > 0 && (
             <p className="thanks-total thanks-ship">
-              <span>BUNDELKORTING</span>
+              <span>{bundle}</span>
               <span>−{money(summary.order.discount)}</span>
             </p>
           )}
           <p className="thanks-total thanks-ship">
-            <span>VERZENDING · {shippingLabel(summary.order.shippingMethod).toUpperCase()}</span>
-            <span>{summary.order.shippingFee ? money(summary.order.shippingFee) : "Gratis"}</span>
+            <span>{t.shipping} · {shippingLabel(summary.order.shippingMethod).toUpperCase()}</span>
+            <span>{summary.order.shippingFee ? money(summary.order.shippingFee) : free}</span>
           </p>
           <p className="thanks-total">
-            <span>TOTAAL</span>
+            <span>{total}</span>
             <b>{money(summary.order.total)}</b>
           </p>
           <Link href="/" className="buy thanks-ok">
-            JA, OKÉ <span aria-hidden="true">↗</span>
+            {t.ok} <span aria-hidden="true">↗</span>
           </Link>
         </>
       ) : (
         <>
-          <p className="micro">BETALING</p>
-          <h1>We vinden je betaling niet terug.</h1>
+          <p className="micro">{t.payment}</p>
+          <h1>{t.notFound}</h1>
           <p className="thanks-lead">
-            Als je wel betaald hebt, krijg je binnen enkele minuten een bevestiging
-            per e-mail. Anders kun je het opnieuw proberen vanuit je winkelmand.
+            {t.notFoundLead}
           </p>
           <Link href="/#drop" className="buy thanks-ok">
-            TERUG NAAR DE SHOP <span aria-hidden="true">↗</span>
+            {t.back} <span aria-hidden="true">↗</span>
           </Link>
         </>
       )}
