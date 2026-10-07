@@ -15,6 +15,8 @@ export const metadata: Metadata = {
     type: "website",
   },
   twitter: { card: "summary_large_image" },
+  applicationName: "Les Autres",
+  appleWebApp: { title: "Les Autres" },
   robots: {
     index: indexable(),
     follow: indexable(),
