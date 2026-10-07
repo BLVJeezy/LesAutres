@@ -442,7 +442,7 @@ p {
 .price-row > span:first-child {
   font-size: 22px;
 }
-.price-row > span:last-child {
+.price-row > span:last-child:not(:first-child) {
   font: 9px monospace;
   color: var(--muted);
   letter-spacing: 1px;
@@ -2750,3 +2750,7 @@ footer {
 .selector-head.size-help { margin-top: 14px; min-height: 0; gap: 12px; }
 .selector-head.size-help .text-button { white-space: nowrap; }
 .size-help + .fit-advisor { margin-top: 10px; }
+
+.product-title { display: flex; align-items: center; gap: 12px; }
+.product-title .pink-dot { flex: none; width: 10px; height: 10px; }
+.product-info .price-row { margin: 12px 0 16px; }

@@ -891,20 +891,12 @@ export default function Store({
             </div>
           </div>
           <div className="product-info">
-            <div className="drop-label">
-              <span className="pink-dot" /> DROP 001{" "}
-              <span>· LIMITED EDITION</span>
-            </div>
-            <h2>{featured.name.toUpperCase()}</h2>
+            <h2 className="product-title">
+              <span className="pink-dot" /> {featured.name.toUpperCase()}
+            </h2>
             <div className="price-row">
               <span>{money(price)}</span>
-              <span>BOX FIT. BIG ENERGY.</span>
             </div>
-            {featured.description && (
-              <p className="description">
-                {lang !== "nl" ? t.description : featured.description}
-              </p>
-            )}
             {!live && (
               <p className="preview-note">{t.preview}</p>
             )}
@@ -932,7 +924,7 @@ export default function Store({
                 </div>
                 <div className="drop-segments" aria-hidden>
                   {Array.from({ length: drop.limit }, (_, i) => (
-                    <span key={i} className={i < drop.limit - Math.max(0, left ?? 0) ? "gone" : ""} />
+                    <span key={i} className={i >= Math.max(0, left ?? 0) ? "gone" : ""} />
                   ))}
                 </div>
               </div>
