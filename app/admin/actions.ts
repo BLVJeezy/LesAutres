@@ -6,6 +6,7 @@ import { emptyStock, MAX_IMAGES, sizes } from "@/lib/catalog";
 import { createRevolutWebhook } from "@/lib/revolut";
 import { setSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/site";
+import { isCarrier } from "@/lib/tracking";
 import { deleteSubscriber } from "@/lib/subscribers";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
@@ -18,6 +19,7 @@ import {
   createProduct,
   setOrderRefunded,
   setOrderShipped,
+  shipOrder,
   updateProduct,
   type ProductInput,
 } from "@/lib/shop";
@@ -109,6 +111,19 @@ export async function toggleShippedAction(form: FormData) {
   await guard();
   if (await setOrderShipped(String(form.get("orderId") ?? ""), form.get("shipped") === "1"))
     revalidatePath("/admin", "layout");
+}
+
+export async function shipOrderAction(_: FormState, form: FormData): Promise<FormState> {
+  await guard();
+  const orderId = String(form.get("orderId") ?? "");
+  const carrier = form.get("carrier");
+  const code = String(form.get("code") ?? "").slice(0, 300);
+  if (!isCarrier(carrier)) return { error: "Kies een vervoerder." };
+  if (carrier !== "hand" && !code.trim()) return { error: "Vul de trackingcode of trackinglink in." };
+  const r = await shipOrder(orderId, carrier, code);
+  if (!r.ok) return { error: "Bestelling niet gevonden." };
+  revalidatePath("/admin", "layout");
+  return { ok: r.mailed ? "Verzonden. De klant kreeg een e-mail met de trackinglink." : "Verzonden. (Geen e-mail verstuurd: e-mail is niet ingesteld of de code is ongewijzigd.)" };
 }
 
 export async function toggleRefundedAction(form: FormData) {

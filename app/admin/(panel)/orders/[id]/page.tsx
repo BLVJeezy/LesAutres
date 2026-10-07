@@ -7,6 +7,8 @@ import { shippingLabel } from "@/lib/shipping";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
 import { toggleRefundedAction, toggleShippedAction } from "../../../actions";
 import { STATUS_BADGE } from "../status";
+import { ShipForm } from "./ship-form";
+import { carrierForShipping, isCarrier } from "@/lib/tracking";
 
 export default async function OrderDetail({ params }: { params: Promise<{ id: string }> }) {
   await requireAdmin();
@@ -74,16 +76,23 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                     {status === "refunded" ? "Terugbetaling ongedaan maken" : "Markeer als terugbetaald"}
                   </button>
                 </form>
-                {status !== "refunded" && (
+                {status !== "refunded" && order.shippedAt && (
                   <form action={toggleShippedAction}>
                     <input type="hidden" name="orderId" value={order.id} />
-                    <input type="hidden" name="shipped" value={order.shippedAt ? "0" : "1"} />
-                    <button className={`admin-btn ${order.shippedAt ? "secondary" : ""}`}>
-                      {order.shippedAt ? "Markeer als niet verzonden" : "Markeer als verzonden"}
-                    </button>
+                    <input type="hidden" name="shipped" value="0" />
+                    <button className="admin-btn secondary">Markeer als niet verzonden</button>
                   </form>
                 )}
               </div>
+              {status !== "refunded" && (
+                <ShipForm
+                  orderId={order.id}
+                  carrier={isCarrier(order.trackingCarrier) ? order.trackingCarrier : carrierForShipping(order.shippingMethod)}
+                  code={order.trackingCode ?? ""}
+                  url={order.trackingUrl ?? null}
+                  shipped={!!order.shippedAt}
+                />
+              )}
             </div>
           </section>
 

@@ -1,5 +1,7 @@
 import type { CartItem, Size } from "./catalog";
 export type EventName =
+  | "page_view"
+  | "size_advice"
   | "view_product"
   | "select_size"
   | "select_colorway"
@@ -19,6 +21,12 @@ export function trackEvent(
   window.dispatchEvent(
     new CustomEvent("les-autres:analytics", { detail: { name, context } }),
   );
+  // Anonymous daily counters (no cookies, no personal data), only after consent.
+  try {
+    const body = JSON.stringify({ name });
+    if (!navigator.sendBeacon?.("/api/track", new Blob([body], { type: "application/json" })))
+      fetch("/api/track", { method: "POST", body, keepalive: true, headers: { "Content-Type": "application/json" } });
+  } catch {}
 }
 export async function onSubscribe(
   email: string,

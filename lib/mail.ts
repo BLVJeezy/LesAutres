@@ -1,5 +1,6 @@
 import { money } from "./catalog";
 import { shippingLabel } from "./shipping";
+import { carrierLabel } from "./tracking";
 import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
@@ -152,6 +153,75 @@ export function shopEmail(order: Order, number: string, lines: MailLine[]) {
     `${siteUrl()}/admin/orders/${order.id}`,
   ].join("\n");
   return { subject: `Nieuwe bestelling ${number} — ${money(order.total)} — ${order.name}`, html, text };
+}
+
+export function shippedEmail(order: Order, number: string, lines: MailLine[]) {
+  const first = order.name.split(" ")[0] || "jij";
+  const carrier = carrierLabel(order.trackingCarrier);
+  const button = order.trackingUrl
+    ? `<tr><td style="padding-top:22px">
+        <a href="${esc(order.trackingUrl)}" style="display:inline-block;background:#d595a4;color:#14160f;padding:16px 22px;font:bold 11px monospace;letter-spacing:1px;text-decoration:none">VOLG JE PAKKET ↗</a>
+      </td></tr>`
+    : "";
+  const html = layout(
+    `Je bestelling ${number} is onderweg.`,
+    `
+      <tr><td style="font:bold 30px/1 Arial,Helvetica,sans-serif;color:#efeee8;text-transform:uppercase;letter-spacing:-1px">
+        Hey ${esc(first)},<br><span style="color:#d595a4">je pakket is onderweg.</span>
+      </td></tr>
+      <tr><td style="padding-top:18px;font:15px/1.55 Arial,Helvetica,sans-serif;color:#efeee8">
+        Je bestelling <b>${esc(number)}</b> heeft ons magazijn verlaten${carrier ? ` en wordt geleverd door <b>${esc(carrier)}</b>` : ""}.
+        ${order.trackingCode && !order.trackingUrl ? `Trackingcode: <b>${esc(order.trackingCode)}</b>.` : ""}
+      </td></tr>
+      ${button}
+      <tr><td style="padding-top:28px;font:10px monospace;letter-spacing:1px;color:#989a92">IN DIT PAKKET</td></tr>
+      <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${linesTable(lines)}</table></td></tr>
+      <tr><td style="padding-top:22px;font:14px/1.5 Arial,Helvetica,sans-serif;color:#efeee8">
+        ${esc(order.name)}<br>${esc(order.address)}
+      </td></tr>
+      <tr><td style="padding-top:24px;font:13px/1.55 Arial,Helvetica,sans-serif;color:#989a92">
+        Vragen? Antwoord gewoon op deze e-mail.
+      </td></tr>`,
+  );
+  const text = [
+    `Hey ${first}, je pakket is onderweg.`,
+    `Bestelling ${number}${carrier ? ` · ${carrier}` : ""}`,
+    order.trackingUrl ? `Volg je pakket: ${order.trackingUrl}` : order.trackingCode ? `Trackingcode: ${order.trackingCode}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  return { subject: `Je bestelling ${number} is onderweg — Les Autres`, html, text };
+}
+
+export function abandonedEmail(order: Order, lines: MailLine[], checkoutUrl: string | null) {
+  const first = order.name.split(" ")[0] || "jij";
+  const link = checkoutUrl || `${siteUrl()}/#drop`;
+  const html = layout(
+    "Je Les Autres-bestelling is nog niet afgerond.",
+    `
+      <tr><td style="font:bold 30px/1 Arial,Helvetica,sans-serif;color:#efeee8;text-transform:uppercase;letter-spacing:-1px">
+        ${esc(first)}, je tees<br><span style="color:#d595a4">wachten nog op je.</span>
+      </td></tr>
+      <tr><td style="padding-top:18px;font:15px/1.55 Arial,Helvetica,sans-serif;color:#efeee8">
+        Je was bijna klaar met je bestelling, maar de betaling is niet afgerond. Drop 001 is beperkt tot 50 stuks
+        en je reservering is intussen verlopen. Wil je ze nog? Rond je bestelling hieronder af.
+      </td></tr>
+      <tr><td style="padding-top:22px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${linesTable(lines)}</table></td></tr>
+      ${totals(order)}
+      <tr><td style="padding-top:24px">
+        <a href="${esc(link)}" style="display:inline-block;background:#d595a4;color:#14160f;padding:16px 22px;font:bold 11px monospace;letter-spacing:1px;text-decoration:none">ROND JE BESTELLING AF ↗</a>
+      </td></tr>
+      <tr><td style="padding-top:24px;font:12px/1.55 Arial,Helvetica,sans-serif;color:#989a92">
+        Je krijgt deze herinnering eenmalig omdat je je e-mailadres invulde bij het afrekenen. Geen interesse meer? Dan hoef je niets te doen.
+      </td></tr>`,
+  );
+  const text = [
+    `${first}, je tees wachten nog op je.`,
+    `Je bestelling is nog niet betaald. Rond ze af: ${link}`,
+    ...lines.map((l) => `- ${l.name}, maat ${l.size} × ${l.qty}`),
+    `Totaal: ${money(order.total)}`,
+  ].join("\n");
+  return { subject: "Je tees wachten nog op je — Les Autres", html, text };
 }
 
 export async function sendMail(to: string, mail: { subject: string; html: string; text: string }, replyTo?: string) {

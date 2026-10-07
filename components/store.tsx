@@ -33,6 +33,7 @@ import {
   type ShopProduct,
 } from "@/lib/catalog";
 import { company } from "@/lib/company";
+import { adviseSize } from "@/lib/fit";
 import { BUNDLE_PRODUCTS, BUNDLES, bundlePriceFor, cartDiscount } from "@/lib/bundles";
 import { FREE_FROM, SHIPPING_OPTIONS, shippingFee, type ShippingId } from "@/lib/shipping";
 import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
@@ -247,6 +248,48 @@ function SizeGuide() {
           ? "Afmetingen van het shirt, plat gemeten. Kleine afwijkingen van 1–2 cm zijn mogelijk."
           : "Jouw lichaamsmaten. Twijfel je tussen twee maten, kies dan de grootste voor de boxy look."}
       </p>
+    </div>
+  );
+}
+
+function FitAdvisor({ onPick }: { onPick: (s: Size) => void }) {
+  const [open, setOpen] = useState(false);
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const advice = adviseSize(Number(height), Number(weight));
+  if (!open)
+    return (
+      <button className="text-button fit-toggle" onClick={() => setOpen(true)}>
+        TWIJFEL JE OVER JE MAAT? <ArrowUpRight size={12} />
+      </button>
+    );
+  return (
+    <div className="fit-advisor">
+      <div className="fit-inputs">
+        <label>
+          <span>LENGTE</span>
+          <input inputMode="numeric" placeholder="178" value={height} onChange={(e) => setHeight(e.target.value.replace(/\D/g, "").slice(0, 3))} />
+          <em>cm</em>
+        </label>
+        <label>
+          <span>GEWICHT</span>
+          <input inputMode="numeric" placeholder="72" value={weight} onChange={(e) => setWeight(e.target.value.replace(/\D/g, "").slice(0, 3))} />
+          <em>kg</em>
+        </label>
+      </div>
+      {advice ? (
+        <div className="fit-result">
+          <p>
+            Wij raden <b>{advice}</b> aan voor de bedoelde boxy, oversized look. Liever minder oversized? Neem een maat
+            kleiner.
+          </p>
+          <button className="fit-pick" onClick={() => onPick(advice)}>
+            KIES {advice}
+          </button>
+        </div>
+      ) : (
+        <p className="fit-hint">Vul je lengte en gewicht in voor een maatadvies.</p>
+      )}
     </div>
   );
 }
@@ -620,6 +663,7 @@ export default function Store({
       .then((d) => d && setDrop(d))
       .catch(() => {});
     setLoaded(true);
+    trackEvent("page_view");
     trackEvent("view_product", { product: "drop-001" });
   }, []);
   useEffect(() => {
@@ -899,6 +943,7 @@ export default function Store({
                 </button>
               ))}
             </div>
+            <FitAdvisor onPick={(s) => { chooseSize(s); trackEvent("size_advice", { size: s }); }} />
             <div className="stock-line" aria-live="polite">
               {stock !== null && stock <= 3 ? (
                 <>
@@ -1163,6 +1208,8 @@ export default function Store({
               onClick={() => {
                 localStorage.setItem("la-consent", "accepted");
                 setConsent("accepted");
+                trackEvent("page_view");
+                trackEvent("view_product", { product: "drop-001" });
               }}
             >
               Accepteren <Check size={14} />

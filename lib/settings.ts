@@ -1,7 +1,7 @@
 import { firestore } from "./firebase";
 
 /** Small key/value store in Firestore (settings/shop) for values set up from the admin. */
-type Settings = { revolutWebhookSecret?: string; revolutWebhookUrl?: string };
+type Settings = { revolutWebhookSecret?: string; revolutWebhookUrl?: string; lastAbandonedSweep?: number };
 
 export async function getSetting<K extends keyof Settings>(key: K): Promise<Settings[K] | undefined> {
   const db = firestore();

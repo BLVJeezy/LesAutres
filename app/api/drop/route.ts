@@ -1,10 +1,13 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { sweepAbandoned } from "@/lib/abandoned";
 import { dropStatus, isCartId, reserve } from "@/lib/drop";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
   const cartId = new URL(request.url).searchParams.get("cart") ?? undefined;
+  // Piggyback on storefront traffic to send abandoned-checkout reminders (throttled to every 10 min).
+  after(() => sweepAbandoned().catch((error) => console.error("Abandoned sweep failed", error)));
   try {
     return NextResponse.json(await dropStatus(isCartId(cartId) ? cartId : undefined), {
       headers: { "cache-control": "no-store" },
