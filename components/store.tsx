@@ -263,18 +263,12 @@ function SizeGuide() {
   );
 }
 
-function FitAdvisor({ onPick }: { onPick: (s: Size) => void }) {
-  const [open, setOpen] = useState(false);
+function FitAdvisor({ open, onPick }: { open: boolean; onPick: (s: Size) => void }) {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const advice = adviseSize(Number(height), Number(weight));
   const t = useT();
-  if (!open)
-    return (
-      <button className="text-button fit-toggle" onClick={() => setOpen(true)}>
-        {t.fitToggle} <ArrowUpRight size={12} />
-      </button>
-    );
+  if (!open) return null;
   return (
     <div className="fit-advisor">
       <div className="fit-inputs">
@@ -627,6 +621,7 @@ export default function Store({
   const price = featured.price;
   const color = colors[0];
   const [size, setSize] = useState<Size>();
+  const [fitOpen, setFitOpen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [sheet, setSheet] = useState<"cart" | "sizes" | "waitlist" | null>(
     null,
@@ -942,14 +937,15 @@ export default function Store({
                 </div>
               </div>
             )}
-            <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
-            <div className="selector-head">
-              <span>{t.sizeHead}</span>
+            <div className="selector-head size-help">
+              <button className="text-button" onClick={() => setFitOpen((o) => !o)}>
+                {t.fitToggle} <ArrowUpRight size={12} />
+              </button>
               <button className="text-button" onClick={() => setSheet("sizes")}>
                 {t.sizeChart} <ArrowUpRight size={12} />
               </button>
             </div>
-            <FitAdvisor onPick={(s) => { chooseSize(s); trackEvent("size_advice", { size: s }); }} />
+            <FitAdvisor open={fitOpen} onPick={(s) => { chooseSize(s); trackEvent("size_advice", { size: s }); }} />
             {BUNDLE_PRODUCTS.includes(featured.id) ? (
               <BundlePicker
                 unit={price}
