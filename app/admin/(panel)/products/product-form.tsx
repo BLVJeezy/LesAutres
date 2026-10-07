@@ -56,7 +56,7 @@ export function ProductForm({
             <h3>Prijzen</h3>
             <div className="admin-row">
               <label>
-                Prijs (incl. btw)
+                Prijs{VAT_RATE ? " (incl. btw)" : ""}
                 <input name="price" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} required placeholder="€ 0,00" />
               </label>
               <label>
@@ -74,7 +74,7 @@ export function ProductForm({
                 <b>{parse(cost) && priceExVat > 0 ? `${Math.round((margin / priceExVat) * 100)}%` : "—"}</b>
               </div>
             </div>
-            <p className="admin-note">Winst en marge excl. btw, vóór betaalkosten.</p>
+            <p className="admin-note">Winst en marge{VAT_RATE ? " excl. btw" : ""}, vóór betaalkosten.</p>
           </section>
 
           <section className="admin-section">

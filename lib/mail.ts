@@ -113,7 +113,7 @@ export function customerEmail(order: Order, number: string, lines: MailLine[]) {
     ...lines.map((l) => `- ${l.name}, maat ${l.size} × ${l.qty}: ${money(l.price * l.qty)}`),
     ...(order.discount ? [`Bundelkorting: −${money(order.discount)}`] : []),
     `Verzending (${shippingLabel(order.shippingMethod)}): ${order.shippingFee ? money(order.shippingFee) : "gratis"}`,
-    `Totaal (incl. btw): ${money(order.total)}`,
+    `Totaal: ${money(order.total)}`,
     ``,
     `Verzenden naar: ${order.name}, ${order.address}`,
     ``,

@@ -130,11 +130,11 @@ export default async function Dashboard({
       ]
     : [];
   const kpis: [string, string, string?][] = [
-    ["Omzet", money(revenue), "incl. btw"],
+    ["Omzet", money(revenue), VAT_RATE ? "incl. btw" : "geen btw"],
     ["Bestellingen", String(orders.length), `${units} stuks`],
     ["Winst", money(profit), net > 0 ? `${Math.round((profit / net) * 100)}% marge` : undefined],
     ["Gem. bestelling", orders.length ? money(Math.round(revenue / orders.length)) : "—"],
-    ["Btw", money(vat), `${VAT_RATE * 100}%`],
+    ...(VAT_RATE ? [["Btw", money(vat), `${VAT_RATE * 100}%`] as [string, string, string]] : []),
     ["Terugbetaald", money(orders.reduce((n, o) => n + o.refunded, 0))],
     ["Kostprijs goederen", money(cogs)],
     ["Te verzenden", String(open.length), "alle periodes"],
@@ -329,7 +329,7 @@ export default async function Dashboard({
             </div>
           </section>
           <p className="admin-note">
-            Winst = omzet − btw − kostprijs; terugbetalingen afgetrokken.
+            Winst = omzet{VAT_RATE ? " − btw" : ""} − kostprijs; terugbetalingen afgetrokken.
           </p>
         </div>
       </div>

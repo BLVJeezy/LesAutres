@@ -11,7 +11,8 @@ export const colors = [
 ] as const;
 export type Colorway = (typeof colors)[number];
 
-export const VAT_RATE = 0.21;
+/** 0 while the seller is not VAT-registered; set to 0.21 once Belgian VAT applies. */
+export const VAT_RATE = 0;
 export const MAX_CART_LINES = 10;
 export const MAX_IMAGES = 8;
 

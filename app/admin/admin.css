@@ -848,7 +848,7 @@
   }
   .admin-side nav {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: 0;
   }
   .admin-side nav a {
@@ -858,7 +858,9 @@
     min-height: 56px;
     justify-content: center;
     border-radius: 0;
-    font-size: 11px;
+    font-size: 10px;
+    text-align: center;
+    line-height: 1.15;
   }
   .admin-side nav a[aria-current="page"] {
     box-shadow: none;

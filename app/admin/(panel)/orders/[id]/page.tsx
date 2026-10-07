@@ -128,8 +128,12 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 )}
                 <dt className="total">Betaald door klant</dt>
                 <dd className="total">{money(order.total - order.refunded)}</dd>
-                <dt>Btw (inbegrepen)</dt>
-                <dd>{money(order.vat)}</dd>
+                {order.vat > 0 && (
+                  <>
+                    <dt>Btw (inbegrepen)</dt>
+                    <dd>{money(order.vat)}</dd>
+                  </>
+                )}
                 <dt>Kostprijs</dt>
                 <dd>−{money(order.cost)}</dd>
                 <dt className="total">Winst</dt>
