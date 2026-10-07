@@ -2731,3 +2731,17 @@ footer {
 }
 .lang-switch select:hover { border-color: #000; }
 @media (max-width: 700px) { .nav nav + .lang-switch { margin-left: auto; margin-right: 14px; } }
+
+/* Counter: single compact row */
+.drop-counter { padding: 9px 12px 10px; margin: 14px 0 4px; border-radius: 6px; }
+.drop-counter-row { display: flex; align-items: center; gap: 10px; font: 600 9px monospace; letter-spacing: 1.2px; }
+.drop-counter-row .drop-live { gap: 6px; }
+.drop-counter-row b { font: 800 15px/1 inherit; font-family: inherit; letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+.drop-counter-row b em { font-style: normal; color: #f2f1ed80; }
+.drop-counter-row b small { font: 600 9px monospace; letter-spacing: 1.2px; }
+.drop-counter-row b.word { color: var(--pink); font-size: 11px; letter-spacing: 1.5px; }
+.drop-counter.low .drop-counter-row b { color: var(--pink); }
+.drop-limited { margin-left: auto; color: #f2f1ed80; white-space: nowrap; }
+.drop-counter .drop-segments { margin-top: 8px; gap: 1px; }
+.drop-counter .drop-segments span { height: 3px; }
+.bundles { margin-top: 14px; }
