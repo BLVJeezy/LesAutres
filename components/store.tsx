@@ -849,7 +849,7 @@ export default function Store({
               <div
                 className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
                 aria-live="polite"
-                aria-label={dropSoldOut ? "Drop 001 is uitverkocht" : `Nog ${Math.max(0, left ?? 0)} van ${drop.limit} tees beschikbaar`}
+                aria-label={dropSoldOut ? "Drop 001 is uitverkocht" : (left ?? 0) <= 8 ? "Laatste stuks van Drop 001" : `Nog ${left} van ${drop.limit} tees beschikbaar`}
               >
                 <div className="drop-counter-head">
                   <span className="drop-live">
@@ -858,11 +858,19 @@ export default function Store({
                   <span>GELIMITEERDE OPLAGE</span>
                 </div>
                 <div className="drop-counter-main">
-                  <b>{dropSoldOut ? "0" : Math.max(0, left ?? 0)}</b>
-                  <span>
-                    <em>/{drop.limit}</em>
-                    {dropSoldOut ? "UITVERKOCHT" : "TEES OVER"}
-                  </span>
+                  {dropSoldOut ? (
+                    <b className="word">UITVERKOCHT</b>
+                  ) : (left ?? 0) <= 8 ? (
+                    <b className="word">LAATSTE STUKS</b>
+                  ) : (
+                    <>
+                      <b>{left}</b>
+                      <span>
+                        <em>/{drop.limit}</em>
+                        TEES OVER
+                      </span>
+                    </>
+                  )}
                 </div>
                 <div className="drop-segments" aria-hidden>
                   {Array.from({ length: drop.limit }, (_, i) => (
@@ -905,19 +913,29 @@ export default function Store({
             {BUNDLE_PRODUCTS.includes(featured.id) && (
               <BundlePicker unit={price} image={featured.image} defaultSize={size} maxQty={left === null ? 20 : Math.max(0, Math.min(20, left))} onAdd={addBundle} />
             )}
-            <div className="trust">
-              <span>
-                <Truck /> Vanuit België
-              </span>
-              <span>
+            <ul className="trust-list">
+              <li>
+                <Truck />
+                <span>
+                  <b>Verzonden vanuit België</b>
+                  <small>Gratis vanaf € 50 · track &amp; trace</small>
+                </span>
+              </li>
+              <li>
                 <RotateCcw />
-                14 dagen retour
-              </span>
-              <span>
+                <span>
+                  <b>14 dagen retour</b>
+                  <small>Niet goed? Stuur het terug</small>
+                </span>
+              </li>
+              <li>
                 <Lock />
-                Veilig betalen
-              </span>
-            </div>
+                <span>
+                  <b>Veilig betalen</b>
+                  <small>Beveiligd via Revolut</small>
+                </span>
+              </li>
+            </ul>
             <div className="payment-logos">
               <Image
                 src="/images/payment-methods.png"
