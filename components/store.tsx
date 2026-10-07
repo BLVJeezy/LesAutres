@@ -38,7 +38,7 @@ import { BUNDLE_PRODUCTS, BUNDLES, bundlePriceFor, cartDiscount } from "@/lib/bu
 import { FREE_FROM, SHIPPING_OPTIONS, shippingFee, type ShippingId } from "@/lib/shipping";
 import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } from "@/lib/integrations";
 import { ShirtFallback } from "./shirt-fallback";
-import { ShotCarousel } from "./shot-carousel";
+import { Lookbook } from "./lookbook";
 import { AnthemVideo } from "./anthem-video";
 function Wordmark() {
   return (
@@ -153,19 +153,21 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
     </form>
   );
 }
-const photos = [
-  {
-    src: "/images/perspective-street.jpg",
-    alt: "Man in de Baddies Tee tegen een roestige stalen pilaar op een bouwwerf",
-  },
-  {
-    src: "/images/perspective-labels.jpg",
-    alt: "Les Autres-nekbedrukking in witte Baddies Tees, 100% katoen",
-  },
-  {
-    src: "/images/perspective-print.jpg",
-    alt: "Close-up van de BADDIES IN BELGICA print",
-  },
+const L = (n: number, w: number, h: number, alt: string) => ({ src: `/images/lookbook-${String(n).padStart(2, "0")}.jpg`, w, h, alt });
+/** Lookbook carousel: film shots of Drop 001 plus the two product details. */
+const lookbook = [
+  L(7, 1600, 1070, "Vier vrienden in de Baddies Tee in de studio"),
+  L(1, 1070, 1600, "Portret in de Baddies Tee met pet"),
+  { src: "/images/perspective-labels.jpg", w: 1500, h: 2000, alt: "Les Autres-nekbedrukking in witte Baddies Tees, 100% katoen" },
+  L(2, 1600, 1070, "De crew in de Baddies Tee voor de SOUNDPlug-muur"),
+  L(5, 1070, 1600, "Baddies Tee vastgehouden aan de schouders"),
+  L(3, 1600, 1070, "Twee vrienden in de Baddies Tee in de studio"),
+  { src: "/images/perspective-print.jpg", w: 1600, h: 1067, alt: "Close-up van de BADDIES IN BELGICA print" },
+  L(6, 1070, 1600, "Leunend tegen het bureau in de Baddies Tee"),
+  L(4, 1070, 1600, "Drie vrienden in de Baddies Tee"),
+  L(8, 1070, 1600, "Vier vrienden in de Baddies Tee onder het SOUNDPlug-logo"),
+  L(9, 1070, 1600, "Twee vrienden in de Baddies Tee, full look"),
+  L(10, 1070, 1600, "De crew in de Baddies Tee, full look"),
 ];
 const COUNTRIES: [string, string][] = [
   ["BE", "België"],
@@ -834,25 +836,12 @@ export default function Store({
             <span>SCROLL TO EXPLORE ↓</span>
           </div>
         </section>
-        <div className="mobile-perspective-photos">
-          <ShotCarousel photos={photos} />
-        </div>
-        <section id="perspective" className="editorial">
+        <section id="perspective" className="lookbook">
           <div className="section-label">
             <span>THE WORLD IS OUR BACKDROP.</span>
+            <span>DROP 001 · SHOT ON FILM</span>
           </div>
-          <div className="photo-strip">
-            {photos.map((photo, i) => (
-              <div className={`photo photo-${i}`} key={i}>
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  sizes="(max-width: 700px) 80vw, 25vw"
-                />
-              </div>
-            ))}
-          </div>
+          <Lookbook photos={lookbook} />
         </section>
         <section id="drop" className="product-section">
           <div
@@ -962,8 +951,8 @@ export default function Store({
               <li>
                 <Truck />
                 <span>
-                  <b>Verzonden vanuit België</b>
-                  <small>Gratis vanaf € 50 · track &amp; trace</small>
+                  <b>Order verwerkt binnen 48 uur</b>
+                  <small>Verzonden vanuit België · gratis vanaf € 50</small>
                 </span>
               </li>
               <li>
@@ -1088,6 +1077,33 @@ export default function Store({
             </div>
           </section>
         )}
+        <section className="crew" aria-label="De crew in Drop 001">
+          <div className="crew-head">
+            <span className="micro">THE OTHERS</span>
+            <h2>
+              WORN BY
+              <br />
+              <span>THE CREW.</span>
+            </h2>
+            <p>Studio, vrienden, één statement. Drop 001, geschoten op film.</p>
+            <a href="#drop" className="buy">
+              <span>SHOP DE TEE — {money(price)}</span>
+              <ArrowUpRight size={20} />
+            </a>
+          </div>
+          <figure className="crew-a">
+            <Image src="/images/lookbook-10.jpg" alt="De crew in de Baddies Tee" width={1070} height={1600} sizes="(max-width: 700px) 92vw, 30vw" />
+          </figure>
+          <figure className="crew-b">
+            <Image src="/images/lookbook-01.jpg" alt="Les Autres Baddies Tee op film" width={1070} height={1600} sizes="(max-width: 700px) 92vw, 40vw" />
+          </figure>
+          <figure className="crew-c">
+            <Image src="/images/lookbook-05.jpg" alt="Baddies Tee vastgehouden aan de schouders" width={1070} height={1600} sizes="(max-width: 700px) 45vw, 20vw" />
+          </figure>
+          <figure className="crew-d">
+            <Image src="/images/lookbook-03.jpg" alt="Twee vrienden in de Baddies Tee" width={1600} height={1070} sizes="(max-width: 700px) 45vw, 25vw" />
+          </figure>
+        </section>
         <section className="manifesto">
           <span className="micro">IT WAS NEVER JUST A T-SHIRT.</span>
           <h2>
