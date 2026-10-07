@@ -1344,6 +1344,19 @@ export default function Store({
                   )}
                 </div>
               )}
+              {(dropQty === 1 || dropQty === 2) && (left === null || left > 0) && (() => {
+                const n = dropQty + 1;
+                const total = bundlePriceFor(n, price);
+                const lastSize = [...cart].reverse().find((c) => BUNDLE_PRODUCTS.includes(c.productId))?.size ?? "M";
+                return (
+                  <div className="upsell">
+                    <p>{t.upsell(n, money(total), money(n * price - total))}</p>
+                    <button className="text-button" onClick={() => addProduct(featured.id, lastSize)}>
+                      {t.upsellAdd}
+                    </button>
+                  </div>
+                );
+              })()}
               {discount > 0 && (
                 <div className="cart-total cart-discount">
                   <span>{t.bundleDiscount}</span>

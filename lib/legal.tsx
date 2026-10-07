@@ -52,7 +52,7 @@ export const legalPages: Record<string, Page> = {
         title: "4. Bestellen",
         body: (
           <p>
-            Je kiest je artikelen en maat, vult je gegevens in en klikt op &ldquo;Betaal met Revolut&rdquo;. Die knop
+            Je kiest je artikelen en maat, vult je gegevens in en klikt op &ldquo;Betalen&rdquo;. Die knop
             betekent dat je een bestelling plaatst met betalingsverplichting. De overeenkomst komt tot stand zodra je
             betaling is gelukt. Je krijgt daarna een bevestigingsmail met alle details van je bestelling. Controleer
             die goed en laat het ons meteen weten als er iets niet klopt.
