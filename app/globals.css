@@ -2377,41 +2377,89 @@ footer {
 
 /* Drop counter + reservation */
 .drop-counter {
-  display: grid;
-  gap: 8px;
-  margin: 18px 0 4px;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: #fff8;
+  margin: 20px 0 6px;
+  padding: 16px 18px 18px;
+  border-radius: 6px;
+  background: var(--text);
+  color: #f2f1ed;
 }
-.drop-counter > div {
+.drop-counter-head {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
-  font: 600 11px monospace;
-  letter-spacing: 1px;
+  font: 600 10px monospace;
+  letter-spacing: 1.5px;
+  color: #f2f1ed99;
 }
-.drop-counter > div span:last-child {
-  color: var(--text-dim);
-  font-weight: 400;
+.drop-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #f2f1ed;
 }
-.drop-counter i {
-  display: block;
-  height: 5px;
-  border-radius: 99px;
-  background: var(--surface);
-  overflow: hidden;
-}
-.drop-counter i b {
-  display: block;
-  height: 100%;
+.drop-live i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
   background: var(--pink);
-  border-radius: inherit;
+  box-shadow: 0 0 0 0 var(--pink);
+  animation: drop-pulse 1.8s infinite;
 }
-.drop-counter.low > div span:first-child {
+@keyframes drop-pulse {
+  0% { box-shadow: 0 0 0 0 rgba(210, 87, 124, 0.7); }
+  70% { box-shadow: 0 0 0 8px rgba(210, 87, 124, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(210, 87, 124, 0); }
+}
+.drop-counter-main {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 10px 0 14px;
+}
+.drop-counter-main b {
+  font-size: 54px;
+  line-height: 0.85;
+  font-weight: 900;
+  letter-spacing: -3px;
+  font-variant-numeric: tabular-nums;
+}
+.drop-counter-main span {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 2px;
+  font: 600 11px monospace;
+  letter-spacing: 1.5px;
+}
+.drop-counter-main em {
+  font-style: normal;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f2f1ed80;
+  letter-spacing: 0;
+}
+.drop-segments {
+  display: grid;
+  grid-template-columns: repeat(50, 1fr);
+  gap: 2px;
+}
+.drop-segments span {
+  height: 10px;
+  border-radius: 1px;
+  background: var(--pink);
+}
+.drop-segments span.gone {
+  background: #f2f1ed26;
+}
+.drop-counter.low .drop-counter-main b {
   color: var(--pink);
+}
+.drop-counter.out .drop-counter-main b {
+  color: #f2f1ed66;
+}
+@media (prefers-reduced-motion: reduce) {
+  .drop-live i {
+    animation: none;
+  }
 }
 .reservation {
   display: flex;
