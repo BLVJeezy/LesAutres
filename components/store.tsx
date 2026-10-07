@@ -253,10 +253,12 @@ function SizeGuide() {
 
 function BundlePicker({
   unit,
+  image,
   defaultSize,
   onAdd,
 }: {
   unit: number;
+  image: string;
   defaultSize?: Size;
   onAdd: (sizes: Size[]) => void;
 }) {
@@ -282,9 +284,18 @@ function BundlePicker({
               className={qty === b.qty ? "selected" : ""}
               onClick={() => setQty(b.qty)}
             >
+              {b.qty === 2 && <em className="bundle-tag">POPULAIR</em>}
+              {b.qty === 3 && <em className="bundle-tag dark">BESTE DEAL</em>}
+              <span className={`bundle-thumbs n${b.qty}`} aria-hidden>
+                {Array.from({ length: b.qty }, (_, i) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={i} src={image} alt="" loading="lazy" />
+                ))}
+              </span>
               <b>{b.label.toUpperCase()}</b>
-              <span>{money(total)}</span>
-              <small>{save > 0 ? `Bespaar ${money(save)}` : "Per stuk"}</small>
+              <span className="bundle-price">{money(total)}</span>
+              {b.qty > 1 && <s>{money(b.qty * unit)}</s>}
+              <small>{save > 0 ? `Bespaar ${money(save)}` : `${money(unit)} per stuk`}</small>
             </button>
           );
         })}
@@ -794,7 +805,7 @@ export default function Store({
             </div>
             {cta}
             {BUNDLE_PRODUCTS.includes(featured.id) && (
-              <BundlePicker unit={price} defaultSize={size} onAdd={addBundle} />
+              <BundlePicker unit={price} image={featured.image} defaultSize={size} onAdd={addBundle} />
             )}
             <div className="trust">
               <span>
