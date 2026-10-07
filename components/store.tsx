@@ -6,6 +6,8 @@ import {
   useRef,
   useState,
   useId,
+  createContext,
+  useContext,
   type ReactNode,
 } from "react";
 import { motion } from "framer-motion";
@@ -33,6 +35,7 @@ import {
   type ShopProduct,
 } from "@/lib/catalog";
 import { company } from "@/lib/company";
+import { DICTS, LANGS, LANG_COOKIE, HTML_LANG, detectLang, isLang, type Dict, type Lang } from "@/lib/i18n";
 import { adviseSize } from "@/lib/fit";
 import { BUNDLE_PRODUCTS, BUNDLES, bundlePriceFor, cartDiscount } from "@/lib/bundles";
 import { FREE_FROM, SHIPPING_OPTIONS, shippingFee, type ShippingId } from "@/lib/shipping";
@@ -40,6 +43,8 @@ import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } fr
 import { ShirtFallback } from "./shirt-fallback";
 import { Lookbook } from "./lookbook";
 import { AnthemVideo } from "./anthem-video";
+const I18n = createContext<Dict>(DICTS.nl);
+const useT = () => useContext(I18n);
 function Wordmark() {
   return (
     <span className="wordmark">
@@ -60,6 +65,7 @@ function Sheet({
 }) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const t = useT();
   useEffect(() => {
     const node = ref.current;
     const active = document.activeElement as HTMLElement;
@@ -83,7 +89,7 @@ function Sheet({
     >
       <div className="sheet-head">
         <h2 id={titleId}>{title}</h2>
-        <button aria-label="Sluiten" onClick={onClose}>
+        <button aria-label={t.close} onClick={onClose}>
           <X size={22} />
         </button>
       </div>
@@ -96,6 +102,7 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
   const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
+  const t = useT();
   return (
     <form
       onSubmit={async (e) => {
@@ -110,8 +117,8 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
           });
           setStatus(
             size
-              ? "Je staat op de lijst. We laten het je weten zodra je maat terug is."
-              : "Je staat op de lijst. Je hoort het als eerste bij een nieuwe drop.",
+              ? t.subscribedRestock
+              : t.subscribedDrop,
           );
           setEmail("");
         } catch (error) {
@@ -123,15 +130,15 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
     >
       <div className="email-field">
         <input
-          aria-label="E-mailadres"
+          aria-label={t.email}
           type="email"
-          placeholder="Jouw e-mailadres"
+          placeholder={t.emailPlaceholder}
           required
           maxLength={254}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        <button aria-label="Inschrijven" disabled={busy}>
+        <button aria-label={t.subscribe} disabled={busy}>
           {busy ? "…" : <ArrowRight size={23} />}
         </button>
       </div>
@@ -143,8 +150,9 @@ function Subscribe({ size, color }: { size?: Size; color?: string }) {
           onChange={(e) => setConsent(e.target.checked)}
         />
         <span>
-          Ja, stuur me updates over {size ? "deze maat" : "nieuwe drops"}. Ik ga
-          akkoord met de <Link href="/privacy">privacyverklaring</Link>.
+          {t.consent(size ? t.consentSize : t.consentDrops)}
+          <Link href="/privacy">{t.privacyPolicy}</Link>
+          {t.consentEnd}
         </span>
       </label>
       <p className="form-status" role="status">
@@ -180,39 +188,40 @@ const COUNTRIES: [string, string][] = [
 
 const SIZE_ROWS = ["XS", "S", "M", "L", "XL", "XXL"] as const;
 const PRODUCT_CM: Record<string, (string | number)[]> = {
-  "Lengte achterkant": [60, 63, 66, 69, 71, 71.5],
-  "Schouderbreedte": [52, 53.5, 55, 57, 59, 61],
-  "Lichaamsbreedte": [53.5, 56.5, 59.5, 63.5, 67.5, 70.5],
-  "Mouwlengte (middenachter)": [46, 48, 50, 52, 53, 54],
+  back: [60, 63, 66, 69, 71, 71.5],
+  shoulder: [52, 53.5, 55, 57, 59, 61],
+  body: [53.5, 56.5, 59.5, 63.5, 67.5, 70.5],
+  sleeve: [46, 48, 50, 52, 53, 54],
 };
 const PRODUCT_IN: Record<string, string[]> = {
-  "Lengte achterkant": ["23 1/2", "24 3/4", "26", "27 1/4", "28", "28 1/4"],
-  "Schouderbreedte": ["20 1/2", "21", "21 3/4", "22 1/2", "23 1/4", "24"],
-  "Lichaamsbreedte": ["21", "22 1/4", "23 1/2", "25", "26 1/2", "27 3/4"],
-  "Mouwlengte (middenachter)": ["18", "19", "19 3/4", "20 1/2", "20 3/4", "21 1/4"],
+  back: ["23 1/2", "24 3/4", "26", "27 1/4", "28", "28 1/4"],
+  shoulder: ["20 1/2", "21", "21 3/4", "22 1/2", "23 1/4", "24"],
+  body: ["21", "22 1/4", "23 1/2", "25", "26 1/2", "27 3/4"],
+  sleeve: ["18", "19", "19 3/4", "20 1/2", "20 3/4", "21 1/4"],
 };
 const BODY_CM: Record<string, string[]> = {
-  Borst: ["80–88", "88–96", "96–104", "104–112", "112–120", "120–128"],
-  Taille: ["66–72", "68–76", "76–84", "84–92", "92–100", "100–108"],
+  chest: ["80–88", "88–96", "96–104", "104–112", "112–120", "120–128"],
+  waist: ["66–72", "68–76", "76–84", "84–92", "92–100", "100–108"],
 };
 const BODY_IN: Record<string, string[]> = {
-  Borst: ["31 1/2–34 3/4", "34 3/4–37 3/4", "37 3/4–41", "41–44", "44–47 1/4", "47 1/4–50 1/2"],
-  Taille: ["26–28 1/4", "26 3/4–30", "30–33", "33–36 1/4", "36 1/4–39 1/4", "39 1/4–42 1/2"],
+  chest: ["31 1/2–34 3/4", "34 3/4–37 3/4", "37 3/4–41", "41–44", "44–47 1/4", "47 1/4–50 1/2"],
+  waist: ["26–28 1/4", "26 3/4–30", "30–33", "33–36 1/4", "36 1/4–39 1/4", "39 1/4–42 1/2"],
 };
 
 function SizeGuide() {
   const [tab, setTab] = useState<"product" | "body">("product");
   const [unit, setUnit] = useState<"cm" | "in">("cm");
   const data = tab === "product" ? (unit === "cm" ? PRODUCT_CM : PRODUCT_IN) : unit === "cm" ? BODY_CM : BODY_IN;
-  const cols = Object.keys(data);
+  const cols = Object.keys(data) as (keyof Dict["sizeCols"])[];
+  const t = useT();
   return (
     <div className="size-table">
       <div className="size-tabs" role="tablist">
         <button role="tab" aria-selected={tab === "product"} onClick={() => setTab("product")}>
-          Productafmetingen
+          {t.productDims}
         </button>
         <button role="tab" aria-selected={tab === "body"} onClick={() => setTab("body")}>
-          Lichaamsafmetingen
+          {t.bodyDims}
         </button>
       </div>
       <div className="size-units">
@@ -227,9 +236,9 @@ function SizeGuide() {
         <table>
           <thead>
             <tr>
-              <th>Maat</th>
+              <th>{t.size}</th>
               {cols.map((c) => (
-                <th key={c}>{c}</th>
+                <th key={c}>{t.sizeCols[c]}</th>
               ))}
             </tr>
           </thead>
@@ -247,8 +256,8 @@ function SizeGuide() {
       </div>
       <p className="tiny">
         {tab === "product"
-          ? "Afmetingen van het shirt, plat gemeten. Kleine afwijkingen van 1–2 cm zijn mogelijk."
-          : "Jouw lichaamsmaten. Twijfel je tussen twee maten, kies dan de grootste voor de boxy look."}
+          ? t.productNote
+          : t.bodyNote}
       </p>
     </div>
   );
@@ -259,22 +268,23 @@ function FitAdvisor({ onPick }: { onPick: (s: Size) => void }) {
   const [height, setHeight] = useState("");
   const [weight, setWeight] = useState("");
   const advice = adviseSize(Number(height), Number(weight));
+  const t = useT();
   if (!open)
     return (
       <button className="text-button fit-toggle" onClick={() => setOpen(true)}>
-        TWIJFEL JE OVER JE MAAT? <ArrowUpRight size={12} />
+        {t.fitToggle} <ArrowUpRight size={12} />
       </button>
     );
   return (
     <div className="fit-advisor">
       <div className="fit-inputs">
         <label>
-          <span>LENGTE</span>
+          <span>{t.height}</span>
           <input inputMode="numeric" placeholder="178" value={height} onChange={(e) => setHeight(e.target.value.replace(/\D/g, "").slice(0, 3))} />
           <em>cm</em>
         </label>
         <label>
-          <span>GEWICHT</span>
+          <span>{t.weight}</span>
           <input inputMode="numeric" placeholder="72" value={weight} onChange={(e) => setWeight(e.target.value.replace(/\D/g, "").slice(0, 3))} />
           <em>kg</em>
         </label>
@@ -282,15 +292,14 @@ function FitAdvisor({ onPick }: { onPick: (s: Size) => void }) {
       {advice ? (
         <div className="fit-result">
           <p>
-            Wij raden <b>{advice}</b> aan voor de bedoelde boxy, oversized look. Liever minder oversized? Neem een maat
-            kleiner.
+            {t.fitAdvice(advice)[0]}<b>{advice}</b>{t.fitAdvice(advice)[2]}
           </p>
           <button className="fit-pick" onClick={() => onPick(advice)}>
-            KIES {advice}
+            {t.pick(advice)}
           </button>
         </div>
       ) : (
-        <p className="fit-hint">Vul je lengte en gewicht in voor een maatadvies.</p>
+        <p className="fit-hint">{t.fitHint}</p>
       )}
     </div>
   );
@@ -313,13 +322,14 @@ function BundlePicker({
   const [picked, setPicked] = useState<Size[]>([]);
   const sizeAt = (i: number) => picked[i] ?? defaultSize ?? "M";
   const price = bundlePriceFor(qty, unit);
+  const t = useT();
   return (
     <div className="bundles">
       <div className="selector-head">
-        <span>02 — BUNDEL &amp; BESPAAR</span>
-        <span className="micro">MIX JE MATEN</span>
+        <span>{t.bundleHead}</span>
+        <span className="micro">{t.mixSizes}</span>
       </div>
-      <div className="bundle-options" role="radiogroup" aria-label="Aantal tees">
+      <div className="bundle-options" role="radiogroup" aria-label={t.teeCount}>
         {BUNDLES.map((b) => {
           const total = bundlePriceFor(b.qty, unit);
           const save = b.qty * unit - total;
@@ -331,8 +341,8 @@ function BundlePicker({
               className={qty === b.qty ? "selected" : ""}
               onClick={() => setQty(b.qty)}
             >
-              {b.qty === 2 && <em className="bundle-tag">POPULAIR</em>}
-              {b.qty === 3 && <em className="bundle-tag dark">BESTE DEAL</em>}
+              {b.qty === 2 && <em className="bundle-tag">{t.popular}</em>}
+              {b.qty === 3 && <em className="bundle-tag dark">{t.bestDeal}</em>}
               <span className={`bundle-thumbs n${b.qty}`} aria-hidden>
                 {Array.from({ length: b.qty }, (_, i) => (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -342,7 +352,7 @@ function BundlePicker({
               <b>{b.label.toUpperCase()}</b>
               <span className="bundle-price">{money(total)}</span>
               {b.qty > 1 && <s>{money(b.qty * unit)}</s>}
-              <small>{save > 0 ? `Bespaar ${money(save)}` : `${money(unit)} per stuk`}</small>
+              <small>{save > 0 ? t.save(money(save)) : t.perPiece(money(unit))}</small>
             </button>
           );
         })}
@@ -360,17 +370,17 @@ function BundlePicker({
           </span>
           <b>4+ TEES</b>
           <span className="bundle-price">{money(Math.round(BUNDLES[2].price / 3))}</span>
-          <small>per stuk · zelfde topkorting</small>
+          <small>{t.perPieceTop}</small>
         </button>
       </div>
       {qty > 3 && (
         <div className="bundle-stepper">
-          <span>AANTAL TEES</span>
-          <button aria-label="Minder" onClick={() => setQty((q) => Math.max(4, q - 1))} disabled={qty <= 4}>
+          <span>{t.amountTees}</span>
+          <button aria-label={t.less} onClick={() => setQty((q) => Math.max(4, q - 1))} disabled={qty <= 4}>
             <Minus size={14} />
           </button>
           <b>{qty}</b>
-          <button aria-label="Meer" onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty}>
+          <button aria-label={t.more} onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty}>
             <Plus size={14} />
           </button>
         </div>
@@ -402,7 +412,7 @@ function BundlePicker({
         onClick={() => onAdd(Array.from({ length: qty }, (_, i) => sizeAt(i)))}
       >
         <span>
-          {qty === 1 ? "1 TEE" : `${qty} TEES`} IN WINKELMAND — {money(price)}
+          {t.teesToBag(qty, money(price))}
         </span>
         <ArrowUpRight size={22} />
       </button>
@@ -422,6 +432,7 @@ function CheckoutForm({
   const [c, setC] = useState<Customer>(EMPTY_CUSTOMER);
   const [ship, setShip] = useState<ShippingId>("bpost");
   const fee = shippingFee(ship, subtotal);
+  const t = useT();
   const field = (key: keyof Customer, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="checkout-field">
       <span>{label}</span>
@@ -441,59 +452,56 @@ function CheckoutForm({
         onSubmit(c, ship);
       }}
     >
-      <span className="micro">02 — VERZENDING</span>
-      {field("name", "Naam", { autoComplete: "name", maxLength: 120 })}
-      {field("email", "E-mail", { type: "email", autoComplete: "email", maxLength: 254 })}
-      {field("phone", "Telefoon (optioneel)", { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+32 …" })}
-      {field("street", "Straat en nummer", { autoComplete: "address-line1", maxLength: 200 })}
+      <span className="micro">{t.shippingHead}</span>
+      {field("name", t.name, { autoComplete: "name", maxLength: 120 })}
+      {field("email", t.emailShort, { type: "email", autoComplete: "email", maxLength: 254 })}
+      {field("phone", t.phone, { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+32 …" })}
+      {field("street", t.street, { autoComplete: "address-line1", maxLength: 200 })}
       <div className="checkout-row">
-        {field("postcode", "Postcode", { autoComplete: "postal-code", maxLength: 12 })}
-        {field("city", "Gemeente", { autoComplete: "address-level2", maxLength: 80 })}
+        {field("postcode", t.postcode, { autoComplete: "postal-code", maxLength: 12 })}
+        {field("city", t.city, { autoComplete: "address-level2", maxLength: 80 })}
       </div>
       <label className="checkout-field">
-        <span>Land</span>
+        <span>{t.country}</span>
         <select value={c.country} onChange={(e) => setC({ ...c, country: e.target.value })} autoComplete="country">
-          {COUNTRIES.map(([code, name]) => (
-            <option key={code} value={code}>{name}</option>
+          {COUNTRIES.map(([code]) => (
+            <option key={code} value={code}>{t.countries[code]}</option>
           ))}
         </select>
       </label>
       <fieldset className="shipping-options">
-        <legend className="micro">03 — LEVERING</legend>
+        <legend className="micro">{t.deliveryHead}</legend>
         {SHIPPING_OPTIONS.map((o) => {
           const f = shippingFee(o.id, subtotal);
           return (
             <label key={o.id} className={ship === o.id ? "active" : ""}>
               <input type="radio" name="shipping" value={o.id} checked={ship === o.id} onChange={() => setShip(o.id)} />
               <span>
-                <b>{o.label}</b>
-                <small>{o.note}</small>
+                <b>{t.shipping[o.id]?.[0] ?? o.label}</b>
+                <small>{t.shipping[o.id]?.[1] ?? o.note}</small>
               </span>
-              <em>{f ? money(f) : "Gratis"}</em>
+              <em>{f ? money(f) : t.free}</em>
             </label>
           );
         })}
         {subtotal < FREE_FROM && (
-          <p className="tiny">Gratis verzending met bpost, GLS of UPS vanaf {money(FREE_FROM)}.</p>
+          <p className="tiny">{t.freeFrom(money(FREE_FROM))}</p>
         )}
       </fieldset>
       <div className="cart-total checkout-total">
-        <span>TOTAAL</span>
+        <span>{t.total}</span>
         <b>{money(subtotal + fee)}</b>
       </div>
       <p className="tiny checkout-legal">
-        Verzonden {company.dispatchTime} · 14 dagen herroepingsrecht ·
-        2 jaar wettelijke garantie. De betaling wordt namens {company.brand} geïnd door{" "}
-        {company.paymentCollector.split(" (")[0]}.
+        {t.checkoutLegal(company.paymentCollector.split(" (")[0])}
       </p>
       <button className="buy" disabled={busy}>
-        {busy ? "EVEN GEDULD…" : "BETAAL MET REVOLUT"}
+        {busy ? t.wait : t.payRevolut}
         <ArrowUpRight size={20} />
       </button>
       <p className="tiny checkout-legal">
-        Met &ldquo;Betaal met Revolut&rdquo; plaats je een bestelling met betalingsverplichting en ga je akkoord met
-        onze <Link href="/voorwaarden">algemene voorwaarden</Link>. Lees ook onze{" "}
-        <Link href="/privacy">privacyverklaring</Link> en <Link href="/retour">retourvoorwaarden</Link>.
+        {t.terms[0]}<Link href="/voorwaarden">{t.terms[1]}</Link>{t.terms[2]}
+        <Link href="/privacy">{t.terms[3]}</Link>{t.terms[4]}<Link href="/retour">{t.terms[5]}</Link>{t.terms[6]}
       </p>
     </form>
   );
@@ -502,6 +510,7 @@ function CheckoutForm({
 function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
   const [index, setIndex] = useState(0);
   const track = useRef<HTMLDivElement>(null);
+  const t = useT();
   const go = (i: number) => {
     const el = track.current;
     if (el) el.scrollTo({ left: i * el.clientWidth, behavior: "smooth" });
@@ -528,13 +537,13 @@ function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
                 loop
                 playsInline
                 preload="metadata"
-                aria-label={`${alt} — video`}
+                aria-label={`${alt} — ${t.video}`}
               />
             ) : (
               <ProductImage
                 className="official-product-photo custom"
                 src={src}
-                alt={i === 0 ? alt : `${alt} — foto ${i + 1}`}
+                alt={i === 0 ? alt : `${alt} — ${t.photo(i + 1)}`}
                 sizes="(max-width: 700px) 100vw, 50vw"
               />
             )}
@@ -546,7 +555,7 @@ function ProductGallery({ images, alt }: { images: string[]; alt: string }) {
           {images.map((src, i) => (
             <button
               key={src + i}
-              aria-label={`Foto ${i + 1}`}
+              aria-label={t.photoBtn(i + 1)}
               aria-current={i === index ? "true" : undefined}
               onClick={() => go(i)}
             />
@@ -573,6 +582,7 @@ function MoreProduct({
   onAdd: (size: Size) => void;
 }) {
   const [size, setSize] = useState<Size>();
+  const t = useT();
   return (
     <article className="more-card">
       <div className="more-image">
@@ -598,7 +608,7 @@ function MoreProduct({
         ))}
       </div>
       <button className="buy" disabled={!size} onClick={() => size && onAdd(size)}>
-        <span>{size ? "IN WINKELMAND" : "KIES JE MAAT"}</span>
+        <span>{size ? t.addToBag : t.chooseSize}</span>
         <ArrowUpRight size={20} />
       </button>
     </article>
@@ -631,11 +641,23 @@ export default function Store({
   const [reservedUntil, setReservedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const viewer = useRef<HTMLDivElement>(null);
+  const [lang, setLangState] = useState<Lang>("nl");
+  const t = DICTS[lang];
+  function setLang(l: Lang) {
+    setLangState(l);
+    document.documentElement.lang = HTML_LANG[l];
+    try {
+      localStorage.setItem(LANG_COOKIE, l);
+    } catch {}
+    document.cookie = `${LANG_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
+  }
   const stock = size ? featured.stock[size] : null;
   const soldOut = (s: Size) => featured.stock[s] <= 0;
   const productOf = (id: string) => products.find((p) => p.id === id);
   useEffect(() => {
     setConsent(localStorage.getItem("la-consent"));
+    const savedLang = localStorage.getItem(LANG_COOKIE);
+    setLang(isLang(savedLang) ? savedLang : detectLang(navigator.languages));
     try {
       const raw = JSON.parse(localStorage.getItem("la-cart") || "[]");
       if (Array.isArray(raw))
@@ -705,8 +727,8 @@ export default function Store({
         setReservedUntil(null);
         setError(
           d.remaining
-            ? `Er zijn nog maar ${d.remaining} tees van Drop 001 beschikbaar. Pas je winkelmand aan.`
-            : "Drop 001 is uitverkocht.",
+            ? t.onlyLeft(d.remaining)
+            : t.soldOutMsg,
         );
       }
     } catch {}
@@ -758,14 +780,14 @@ export default function Store({
       onClick={add}
     >
       <span>
-        {dropSoldOut ? "UITVERKOCHT" : !size ? "KIES JE MAAT" : "IN WINKELMAND"}
+        {dropSoldOut ? t.soldOut : !size ? t.chooseSize : t.addToBag}
         {size ? ` — ${money(price)}` : ""}
       </span>
       <ArrowUpRight size={22} />
     </motion.button>
   );
   return (
-    <>
+    <I18n.Provider value={t}>
       <header className="nav">
         <a href="#" aria-label="Les Autres, home">
           <Wordmark />
@@ -774,9 +796,19 @@ export default function Store({
           <a href="#drop">DROP 001</a>
           <a href="#perspective">THE PERSPECTIVE</a>
         </nav>
+        <label className="lang-switch">
+          <span className="sr-only">{t.language}</span>
+          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+            {LANGS.map((l) => (
+              <option key={l} value={l}>
+                {l.toUpperCase()}
+              </option>
+            ))}
+          </select>
+        </label>
         <button
           className="bag"
-          aria-label={`Winkelmand, ${count} artikelen`}
+          aria-label={t.bagLabel(count)}
           onClick={() => {
             setError("");
             setSheet("cart");
@@ -822,7 +854,7 @@ export default function Store({
               <br />
               <span>DIFFERENT PERSPECTIVE.</span>
             </p>
-            <a href="#drop" className="round-link" aria-label="Ontdek Drop 001">
+            <a href="#drop" className="round-link" aria-label={t.discover}>
               <ArrowDown size={22} />
             </a>
             <span className="micro">
@@ -873,34 +905,36 @@ export default function Store({
               <span>BOX FIT. BIG ENERGY.</span>
             </div>
             {featured.description && (
-              <p className="description">{featured.description}</p>
+              <p className="description">
+                {lang !== "nl" && featured.description.trim() === DICTS.nl.description ? t.description : featured.description}
+              </p>
             )}
             {!live && (
-              <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
+              <p className="preview-note">{t.preview}</p>
             )}
             {drop && (
               <div
                 className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
                 aria-live="polite"
-                aria-label={dropSoldOut ? "Drop 001 is uitverkocht" : (left ?? 0) <= 8 ? "Laatste stuks van Drop 001" : `Nog ${left} van ${drop.limit} tees beschikbaar`}
+                aria-label={dropSoldOut ? t.counterSoldOut : (left ?? 0) <= 8 ? t.counterLast : t.counterLeft(left ?? 0, drop.limit)}
               >
                 <div className="drop-counter-head">
                   <span className="drop-live">
                     <i /> LIVE · DROP 001
                   </span>
-                  <span>GELIMITEERDE OPLAGE</span>
+                  <span>{t.limited}</span>
                 </div>
                 <div className="drop-counter-main">
                   {dropSoldOut ? (
-                    <b className="word">UITVERKOCHT</b>
+                    <b className="word">{t.soldOut}</b>
                   ) : (left ?? 0) <= 8 ? (
-                    <b className="word">LAATSTE STUKS</b>
+                    <b className="word">{t.lastPieces}</b>
                   ) : (
                     <>
                       <b>{left}</b>
                       <span>
                         <em>/{drop.limit}</em>
-                        TEES OVER
+                        {t.teesLeft}
                       </span>
                     </>
                   )}
@@ -914,9 +948,9 @@ export default function Store({
             )}
             <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
             <div className="selector-head">
-              <span>01 — MAAT</span>
+              <span>{t.sizeHead}</span>
               <button className="text-button" onClick={() => setSheet("sizes")}>
-                MAATTABEL <ArrowUpRight size={12} />
+                {t.sizeChart} <ArrowUpRight size={12} />
               </button>
             </div>
             <div className="sizes">
@@ -924,7 +958,7 @@ export default function Store({
                 <button
                   key={s}
                   aria-pressed={s === size}
-                  aria-label={soldOut(s) ? `${s}, uitverkocht, meld me aan` : s}
+                  aria-label={soldOut(s) ? t.sizeSoldOut(s) : s}
                   className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
                   onClick={() => chooseSize(s)}
                 >
@@ -936,11 +970,11 @@ export default function Store({
             <div className="stock-line" aria-live="polite">
               {stock !== null && stock <= 3 ? (
                 <>
-                  <span className="pink-dot" /> Nog {stock} in deze maat
-                  {!live && " · voorbeeldvoorraad"}
+                  <span className="pink-dot" /> {t.stockLeft(stock)}
+                  {!live && t.previewStock}
                 </>
               ) : (
-                <>Oversized fit. Neem je eigen maat voor de boxy look.</>
+                <>{t.fitLine}</>
               )}
             </div>
             {cta}
@@ -951,29 +985,29 @@ export default function Store({
               <li>
                 <Truck />
                 <span>
-                  <b>Order verwerkt binnen 48 uur</b>
-                  <small>Verzonden vanuit België · gratis vanaf € 50</small>
+                  <b>{t.trust[0][0]}</b>
+                  <small>{t.trust[0][1]}</small>
                 </span>
               </li>
               <li>
                 <RotateCcw />
                 <span>
-                  <b>14 dagen retour</b>
-                  <small>Niet goed? Stuur het terug</small>
+                  <b>{t.trust[1][0]}</b>
+                  <small>{t.trust[1][1]}</small>
                 </span>
               </li>
               <li>
                 <Lock />
                 <span>
-                  <b>Veilig betalen</b>
-                  <small>Beveiligd via Revolut</small>
+                  <b>{t.trust[2][0]}</b>
+                  <small>{t.trust[2][1]}</small>
                 </span>
               </li>
             </ul>
             <div className="payment-logos">
               <Image
                 src="/images/payment-methods.png"
-                alt="Betaal met Revolut Pay, Apple Pay, Google Pay, Visa of Mastercard"
+                alt={t.paymentAlt}
                 width={1200}
                 height={96}
                 sizes="(max-width: 700px) 80vw, 460px"
@@ -981,25 +1015,11 @@ export default function Store({
             </div>
             {!live && (
               <p className="tiny delivery">
-                Levertijd wordt bevestigd bij lancering. Betalen is nog niet
-                actief.
+                {t.notLive}
               </p>
             )}
             <div className="accordions">
-              {[
-                {
-                  title: "MATERIAAL & PASVORM",
-                  body: "100% katoen. 240 GSM. Een stevige, zachte stof met een boxy, oversized pasvorm. Brede schouders, ruime mouwen en een rechte zoom.",
-                },
-                {
-                  title: "VERZENDING & RETOUR",
-                  body: `Verzending vanuit België, ${company.shippingCost}. We verzenden ${company.dispatchTime}; je krijgt een trackinglink. Je hebt 14 dagen na ontvangst om te herroepen en 2 jaar wettelijke garantie.`,
-                },
-                {
-                  title: "CARE FOR YOUR OTHERS",
-                  body: "Binnenstebuiten wassen op 30°C met vergelijkbare kleuren. Niet in de droger. Aan de lucht laten drogen. Strijk nooit rechtstreeks op de print.",
-                },
-              ].map((item) => (
+              {t.accordions.map(([title, body]) => ({ title, body })).map((item) => (
                 <details key={item.title}>
                   <summary>
                     {item.title}
@@ -1021,7 +1041,7 @@ export default function Store({
               loop
               playsInline
               preload="metadata"
-              aria-label="Verpakte Baddies Tees van Drop 001, klaar om te verzenden"
+              aria-label={t.unboxingAlt}
             />
           </div>
           <div className="anthem-copy">
@@ -1032,11 +1052,10 @@ export default function Store({
               <span>THE PRESS.</span>
             </h2>
             <p>
-              Geen render, geen mock-up. Drop 001 ligt hier: echt katoen, echte print, verpakt en klaar om naar
-              jou te vertrekken.
+              {t.realLife}
             </p>
             <a href="#drop" className="buy">
-              <span>CLAIM JE TEE — {money(price)}</span>
+              <span>{t.claim} — {money(price)}</span>
               <ArrowUpRight size={20} />
             </a>
           </div>
@@ -1051,11 +1070,10 @@ export default function Store({
               <span>BELGICA.</span>
             </h2>
             <p>
-              Het nummer achter de print. Belgica, Hollanda, Fransa, Espagna —
-              zet je geluid aan.
+              {t.anthem}
             </p>
             <a href="#drop" className="buy">
-              <span>SHOP THE TEE — {money(price)}</span>
+              <span>{t.shopTee} — {money(price)}</span>
               <ArrowUpRight size={20} />
             </a>
           </div>
@@ -1077,7 +1095,7 @@ export default function Store({
             </div>
           </section>
         )}
-        <section className="crew" aria-label="De crew in Drop 001">
+        <section className="crew" aria-label={t.crewLabel}>
           <div className="crew-head">
             <span className="micro">THE OTHERS</span>
             <h2>
@@ -1085,9 +1103,9 @@ export default function Store({
               <br />
               <span>THE CREW.</span>
             </h2>
-            <p>Studio, vrienden, één statement. Drop 001, geschoten op film.</p>
+            <p>{t.crewText}</p>
             <a href="#drop" className="buy">
-              <span>SHOP DE TEE — {money(price)}</span>
+              <span>{t.shopTee} — {money(price)}</span>
               <ArrowUpRight size={20} />
             </a>
           </div>
@@ -1118,9 +1136,9 @@ export default function Store({
           <div className="manifesto-bottom">
             <Globe size={64} strokeWidth={0.6} />
             <p>
-              Voor wie er net anders naar kijkt.
+              {t.manifesto[0]}
               <br />
-              Van België naar overal.
+              {t.manifesto[1]}
               <br />
               Les Autres. Since 2024.
             </p>
@@ -1139,7 +1157,7 @@ export default function Store({
               <br />
               WHAT’S NEXT<span>.</span>
             </h2>
-            <p>Nieuwe drops. Als eerste in jouw inbox.</p>
+            <p>{t.newsletter}</p>
           </div>
           <Subscribe />
         </section>
@@ -1159,16 +1177,17 @@ export default function Store({
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} LES AUTRES</span>
           <div>
-            <Link href="/voorwaarden">Voorwaarden</Link>
-            <Link href="/privacy">Privacy</Link>
-            <Link href="/retour">Retour</Link>
-            <Link href="/verzending">Verzending</Link>
-            <Link href="/cookies">Cookies</Link>
-            <Link href="/herroepen">Herroep de overeenkomst hier</Link>
-            <button onClick={() => setConsent(null)}>Cookie-instellingen</button>
+            <Link href="/voorwaarden">{t.footer.terms}</Link>
+            <Link href="/privacy">{t.footer.privacy}</Link>
+            <Link href="/retour">{t.footer.returns}</Link>
+            <Link href="/verzending">{t.footer.shipping}</Link>
+            <Link href="/cookies">{t.footer.cookies}</Link>
+            <Link href="/herroepen">{t.footer.withdraw}</Link>
+            <button onClick={() => setConsent(null)}>{t.footer.cookieSettings}</button>
           </div>
           <span>BELGIUM, WORLDWIDE.</span>
         </div>
+        {lang !== "nl" && <p className="business-note">{t.legalNote}</p>}
         <p className="business-note">
           {[
             company.legalName && `${company.legalName}${company.legalForm ? ` ${company.legalForm}` : ""}`,
@@ -1193,24 +1212,24 @@ export default function Store({
         <div className="sticky-buy">
           <div>
             <b>{featured.name.toUpperCase()}</b>
-            <span>{size ? `Maat ${size}` : money(price)}</span>
+            <span>{size ? t.sizeShort(size) : money(price)}</span>
           </div>
           {size ? (
             cta
           ) : (
             <a href="#drop" className="buy">
-              KIES JE MAAT <ArrowUpRight size={20} />
+              {t.chooseSize} <ArrowUpRight size={20} />
             </a>
           )}
         </div>
       )}
       {consent === null && (
-        <aside className="cookie-banner" aria-label="Cookiekeuze">
+        <aside className="cookie-banner" aria-label={t.cookieLabel}>
           <p>
-            Alleen de essentials?
+            {t.cookieTitle}
             <span>
-              We bewaren je winkelmand. Analytics alleen als jij dat goed vindt.{" "}
-              <Link href="/cookies">Meer info</Link>
+              {t.cookieText}{" "}
+              <Link href="/cookies">{t.moreInfo}</Link>
             </span>
           </p>
           <div>
@@ -1220,7 +1239,7 @@ export default function Store({
                 setConsent("declined");
               }}
             >
-              Alleen noodzakelijk
+              {t.necessary}
             </button>
             <button
               onClick={() => {
@@ -1230,7 +1249,7 @@ export default function Store({
                 trackEvent("view_product", { product: "drop-001" });
               }}
             >
-              Accepteren <Check size={14} />
+              {t.accept} <Check size={14} />
             </button>
           </div>
         </aside>
@@ -1238,17 +1257,15 @@ export default function Store({
       {sheet === "sizes" && (
         <Sheet title="FIND YOUR FIT." onClose={() => setSheet(null)}>
           <p>
-            Boxy / oversized. Kies je gebruikelijke maat voor de bedoelde
-            pasvorm, of een maat kleiner voor minder volume.
+            {t.fitSheet}
           </p>
           <SizeGuide />
         </Sheet>
       )}
       {sheet === "waitlist" && (
-        <Sheet title={`JOUW MAAT. BINNENKORT.`} onClose={() => setSheet(null)}>
+        <Sheet title={t.waitTitle} onClose={() => setSheet(null)}>
           <p>
-            Laat weten wanneer <b>{waitSize}</b> in <b>{color.name}</b> terug
-            is.
+            {t.waitText("", "")[0]}<b>{waitSize}</b>{t.waitText("", "")[2]}<b>{color.name}</b>{t.waitText("", "")[4]}
           </p>
           <Subscribe size={waitSize} color={color.id} />
         </Sheet>
@@ -1261,9 +1278,9 @@ export default function Store({
           {!count ? (
             <div className="empty-cart">
               <ShoppingBag size={38} />
-              <p>Nog ruimte voor een ander perspectief.</p>
+              <p>{t.emptyBag}</p>
               <button className="buy" onClick={() => setSheet(null)}>
-                ONTDEK DROP 001 <ArrowRight size={20} />
+                {t.discover.toUpperCase()} <ArrowRight size={20} />
               </button>
             </div>
           ) : (
@@ -1286,11 +1303,11 @@ export default function Store({
                       </div>
                       <div>
                         <b>{p.name.toUpperCase()}</b>
-                        <p>Maat {item.size}</p>
+                        <p>{t.sizeShort(item.size)}</p>
                         <strong>{money(p.price * item.quantity)}</strong>
                         <div className="quantity">
                           <button
-                            aria-label={`Verminder ${item.size}`}
+                            aria-label={t.decrease(item.size)}
                             onClick={() =>
                               setCart(
                                 cart.flatMap((x, j) =>
@@ -1308,7 +1325,7 @@ export default function Store({
                           <span>{item.quantity}</span>
                           <button
                             disabled={item.quantity >= p.stock[item.size]}
-                            aria-label={`Verhoog ${item.size}`}
+                            aria-label={t.increase(item.size)}
                             onClick={() =>
                               setCart(
                                 addItem(cart, { ...item, quantity: 1 }, products),
@@ -1320,7 +1337,7 @@ export default function Store({
                         </div>
                       </div>
                       <button
-                        aria-label={`Verwijder ${p.name}, ${item.size}`}
+                        aria-label={t.remove(p.name, item.size)}
                         onClick={() => setCart(cart.filter((_, j) => j !== i))}
                       >
                         <X size={16} />
@@ -1333,14 +1350,14 @@ export default function Store({
                 <div className={`reservation ${msLeft <= 0 ? "expired" : ""}`} role="status">
                   {msLeft > 0 ? (
                     <>
-                      <span>⏱ Voor jou gereserveerd</span>
+                      <span>{t.reserved}</span>
                       <b>{reservationLabel}</b>
                     </>
                   ) : (
                     <>
-                      <span>Je reservering is verlopen.</span>
+                      <span>{t.expired}</span>
                       <button className="text-button" onClick={() => reserveBag(dropQty)}>
-                        OPNIEUW RESERVEREN
+                        {t.reserveAgain}
                       </button>
                     </>
                   )}
@@ -1348,16 +1365,16 @@ export default function Store({
               )}
               {discount > 0 && (
                 <div className="cart-total cart-discount">
-                  <span>BUNDELKORTING</span>
+                  <span>{t.bundleDiscount}</span>
                   <b>−{money(discount)}</b>
                 </div>
               )}
               <div className="cart-total">
-                <span>SUBTOTAAL</span>
+                <span>{t.subtotal}</span>
                 <b>{money(total - discount)}</b>
               </div>
               <p className="tiny">
-                Inclusief btw · gratis verzending vanaf € 50 · veilig betalen via Revolut.
+                {t.cartNote}
               </p>
               {checkoutStep ? (
                 <CheckoutForm
@@ -1377,7 +1394,7 @@ export default function Store({
                 />
               ) : (
                 <button className="buy" onClick={() => setCheckoutStep(true)}>
-                  NAAR CHECKOUT
+                  {t.toCheckout}
                   <ArrowUpRight size={20} />
                 </button>
               )}
@@ -1386,14 +1403,13 @@ export default function Store({
               </p>
               {!live && (
                 <p className="tiny">
-                  Preview: er wordt geen bestelling geplaatst of betaling
-                  uitgevoerd.
+                  {t.previewCart}
                 </p>
               )}
             </>
           )}
         </Sheet>
       )}
-    </>
+    </I18n.Provider>
   );
 }
