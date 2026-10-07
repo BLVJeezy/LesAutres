@@ -3,6 +3,8 @@ import { MAX_CART_LINES, sizes, type CartItem } from "@/lib/catalog";
 import { firebaseConfigured } from "@/lib/firebase";
 import { revolutConfigured } from "@/lib/revolut";
 import { cartDiscount, withUnlimitedStock } from "@/lib/bundles";
+import { BUNDLE_PRODUCTS } from "@/lib/bundles";
+import { DROP_LIMIT, dropStatus, isCartId } from "@/lib/drop";
 import { isShippingId } from "@/lib/shipping";
 import { encodeLines, listProducts, startCheckout, type Checkout } from "@/lib/shop";
 
@@ -92,6 +94,20 @@ export async function POST(request: Request) {
 
   try {
     const products = (await listProducts()).map(withUnlimitedStock);
+    const cartId = isCartId(body?.cartId) ? body.cartId : undefined;
+    const dropQty = cart.filter((c) => BUNDLE_PRODUCTS.includes(c.productId)).reduce((n, c) => n + c.quantity, 0);
+    if (dropQty > 0) {
+      const { remaining } = await dropStatus(cartId);
+      if (dropQty > remaining)
+        return NextResponse.json(
+          {
+            error: remaining
+              ? `Er zijn nog maar ${remaining} van de ${DROP_LIMIT} tees beschikbaar. Pas je winkelmand aan.`
+              : "Drop 001 is uitverkocht.",
+          },
+          { status: 409 },
+        );
+    }
     for (const item of cart) {
       const p = products.find((x) => x.id === item.productId);
       if (!p || p.price <= 0 || p.stock[item.size] < item.quantity) {
@@ -114,6 +130,7 @@ export async function POST(request: Request) {
       lines: encodeLines(cart, products),
       ...who,
       shippingMethod,
+      cartId,
       discount: cartDiscount(cart, (id) => products.find((p) => p.id === id)?.price ?? 0),
       description,
       origin,

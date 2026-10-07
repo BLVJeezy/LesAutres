@@ -42,7 +42,7 @@ export const legalPages: Record<string, Page> = {
           <p>
             Alle prijzen zijn in euro en inclusief btw. We verzenden naar {c.countries.join(", ")}.
             Verzending is {c.shippingCost}. Je ziet de verzendkosten en het totaal altijd vóór je betaalt. Foto&apos;s geven het product zo getrouw mogelijk weer; kleine verschillen in
-            kleur door schermen zijn mogelijk. Een aanbod geldt zolang de voorraad strekt. Een kennelijke
+            kleur door schermen zijn mogelijk. Een aanbod geldt zolang de voorraad strekt. Drop 001 is beperkt tot 50 tees; artikelen in je winkelmand worden 10 minuten voor je gereserveerd. Bundels: 2 tees voor € 79,95, vanaf 3 tees € 36,65 per stuk. Een kennelijke
             vergissing in een prijs of productomschrijving bindt ons niet; in dat geval nemen we contact met je op
             en kun je de bestelling kosteloos annuleren.
           </p>
