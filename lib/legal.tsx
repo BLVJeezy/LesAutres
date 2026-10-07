@@ -384,7 +384,7 @@ export const legalPages: Record<string, Page> = {
         title: "Terugbetaling",
         body: (
           <p>
-            We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten (tot het bedrag van onze goedkoopste standaardlevering; de meerprijs voor levering door de CEO betalen we niet terug), binnen 14 dagen nadat
+            We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten (tot het bedrag van onze goedkoopste standaardlevering; de meerprijs voor levering door de CEO of door Issa betalen we niet terug), binnen 14 dagen nadat
             we je herroeping ontvangen. We gebruiken hetzelfde betaalmiddel als waarmee je betaalde, tenzij je
             uitdrukkelijk iets anders vraagt; dat kost je niets. We mogen wachten met terugbetalen tot we het artikel
             terug hebben of tot je aantoont dat je het hebt teruggestuurd.

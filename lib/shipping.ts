@@ -7,6 +7,7 @@ export const SHIPPING_OPTIONS = [
   { id: "gls", label: "GLS", note: "2–4 werkdagen" },
   { id: "ups", label: "UPS", note: "1–3 werkdagen" },
   { id: "ceo", label: "Geleverd door de CEO", note: "Persoonlijk aan je deur. Ja, echt.", fee: 50000 },
+  { id: "issa", label: "Geleverd door Issa zelf", note: "De man achter Baddies in Belgica. Aan je deur.", fee: 500000 },
 ] as const;
 
 export type ShippingId = (typeof SHIPPING_OPTIONS)[number]["id"];
