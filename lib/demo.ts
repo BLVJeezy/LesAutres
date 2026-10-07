@@ -47,6 +47,7 @@ export function demoOrders(productId: string, price = 4495, unitCost = 900, now 
         lines: [[productId, SIZES[Math.floor(rand() * SIZES.length)], qty, price, unitCost]],
         shippingMethod: "bpost",
         shippingFee,
+        discount: 0,
         total,
         refunded,
         fee: 0,

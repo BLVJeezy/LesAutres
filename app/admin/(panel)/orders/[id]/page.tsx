@@ -94,7 +94,13 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
             <div className="admin-card-body">
               <dl className="admin-summary">
                 <dt>Subtotaal</dt>
-                <dd>{money(order.total - order.shippingFee)}</dd>
+                <dd>{money(order.total - order.shippingFee + order.discount)}</dd>
+                {order.discount > 0 && (
+                  <>
+                    <dt>Bundelkorting</dt>
+                    <dd>−{money(order.discount)}</dd>
+                  </>
+                )}
                 <dt>Verzending ({shippingLabel(order.shippingMethod)})</dt>
                 <dd>{order.shippingFee ? money(order.shippingFee) : "Gratis"}</dd>
                 {order.refunded > 0 && (

@@ -2047,7 +2047,7 @@ footer {
   margin: 14px 0 4px;
 }
 .thanks-ship {
-  margin: 18px 0 -24px;
+  margin: 10px 0 -10px;
   color: var(--text-dim);
 }
 .gallery-dots button {
@@ -2221,4 +2221,67 @@ footer {
   object-fit: cover;
   width: 100%;
   height: 100%;
+}
+
+/* Bundles */
+.bundles {
+  margin-top: 26px;
+}
+.bundle-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.bundle-options button {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 14px 6px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+}
+.bundle-options button b {
+  font: 600 11px monospace;
+  letter-spacing: 1px;
+}
+.bundle-options button span {
+  font-size: 16px;
+  font-weight: 700;
+}
+.bundle-options button small {
+  font-size: 11px;
+  color: var(--pink);
+}
+.bundle-options button.selected {
+  border-color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--text);
+}
+.bundle-sizes {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 12px 0;
+}
+.bundle-sizes label {
+  display: grid;
+  gap: 6px;
+}
+.bundle-sizes span {
+  font: 9px monospace;
+  letter-spacing: 1px;
+  color: var(--text-dim);
+}
+.bundle-sizes select {
+  min-height: 44px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--text);
+  font: 14px inherit;
+}
+.cart-discount {
+  margin-bottom: 0;
+  color: var(--pink);
 }

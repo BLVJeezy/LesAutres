@@ -3,6 +3,7 @@ import { previewProduct } from "@/lib/catalog";
 import { firebaseConfigured } from "@/lib/firebase";
 import { listProducts, publicProduct } from "@/lib/shop";
 import { siteUrl } from "@/lib/site";
+import { withUnlimitedStock } from "@/lib/bundles";
 
 export const revalidate = 60;
 
@@ -15,6 +16,7 @@ export default async function Home() {
     : [];
   const live = products.length > 0;
   if (!live) products = [previewProduct];
+  products = products.map(withUnlimitedStock);
   const site = siteUrl();
   return (
     <>
