@@ -3,7 +3,9 @@ import { firestore } from "./firebase";
 import { listOrders } from "./shop";
 
 /** Drop 001 is a limited run: this many tees in total, all sizes together. */
-export const DROP_LIMIT = 50;
+export const DROP_LIMIT = 30;
+/** Tees of the drop already sold outside the webshop (in person, DM); counted as sold. */
+export const SOLD_OFFLINE = 22;
 /** How long tees in someone's bag stay reserved for them. */
 export const RESERVATION_MS = 10 * 60 * 1000;
 
@@ -27,8 +29,9 @@ async function reservedUnits(excludeCartId?: string) {
 
 /** Real availability: limit minus sold minus other people's active reservations. */
 export async function dropStatus(cartId?: string) {
-  if (!firestore()) return { limit: DROP_LIMIT, remaining: DROP_LIMIT, sold: 0 };
-  const [sold, reserved] = await Promise.all([soldUnits(), reservedUnits(cartId)]);
+  if (!firestore()) return { limit: DROP_LIMIT, remaining: DROP_LIMIT - SOLD_OFFLINE, sold: SOLD_OFFLINE };
+  const [online, reserved] = await Promise.all([soldUnits(), reservedUnits(cartId)]);
+  const sold = online + SOLD_OFFLINE;
   return { limit: DROP_LIMIT, sold, remaining: Math.max(0, DROP_LIMIT - sold - reserved) };
 }
 
