@@ -488,3 +488,17 @@ export function orderNumbers(orders: Order[]): Map<string, number> {
 export type OrderStatus = "refunded" | "shipped" | "open";
 export const orderStatus = (o: Order): OrderStatus =>
   o.refunded >= o.total && o.total > 0 ? "refunded" : o.shippedAt ? "shipped" : "open";
+
+/** Unpaid checkouts (customer filled in details but did not pay), newest first. */
+export async function listAbandonedCheckouts(limit = 200) {
+  const db = firestore();
+  if (!db) return [];
+  const snap = await db.collection(ORDERS).where("status", "==", "pending").get();
+  return snap.docs
+    .map((doc) => {
+      const d = { ...(doc.data() as OrderDoc), id: doc.id };
+      return { ...fromDoc(d), reminderSentAt: d.reminderSentAt ?? null };
+    })
+    .sort((a, b) => b.created - a.created)
+    .slice(0, limit);
+}
