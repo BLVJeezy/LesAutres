@@ -2754,3 +2754,8 @@ footer {
 .product-title { display: flex; align-items: center; gap: 12px; }
 .product-title .pink-dot { flex: none; width: 10px; height: 10px; }
 .product-info .price-row { margin: 12px 0 16px; }
+
+/* Cart upsell */
+.upsell { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 6px; padding: 12px 14px; border: 1px dashed var(--pink); border-radius: 6px; background: #d2577c0f; }
+.upsell p { margin: 0; font-size: 13px; }
+.upsell .text-button { white-space: nowrap; color: var(--pink); font-weight: 700; }

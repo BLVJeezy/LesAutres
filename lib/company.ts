@@ -5,9 +5,9 @@
 export const company = {
   brand: "Les Autres",
   /** Official name of the selling company, e.g. "Les Autres BV" or your own name for a sole trader. */
-  legalName: "",
+  legalName: "Solyn Global",
   /** e.g. "BV", "eenmanszaak", "Ltd". */
-  legalForm: "",
+  legalForm: "Ltd",
   /** Registered office: street + number, postcode, city, country. */
   address: "",
   /** Belgian enterprise number (KBO), e.g. "BE 0123.456.789". */
@@ -23,7 +23,7 @@ export const company = {
   paymentCollector: "Solyn Global Ltd (Londen, Verenigd Koninkrijk)",
   /** Shop policy. */
   countries: ["België", "Nederland", "Luxemburg", "Frankrijk", "Duitsland", "Spanje"],
-  shippingCost: "gratis met bpost, GLS of UPS vanaf € 50 (anders € 5,95); persoonlijke levering door Issa zelf kost € 10.000",
+  shippingCost: "altijd gratis met bpost, GLS of UPS; persoonlijke levering door Issa zelf kost € 10.000",
   dispatchTime: "binnen 48 uur na je betaling",
   deliveryTime: "meestal 1 tot 3 werkdagen in België en 2 tot 6 werkdagen in de andere landen",
   carrier: "bpost, GLS of UPS (naar keuze), of persoonlijk door Issa zelf",

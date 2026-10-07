@@ -101,7 +101,7 @@ export const previewProduct: ShopProduct = {
   name: "The Baddies Tee",
   description:
     "Geen grenzen. Geen uitleg nodig.\nEén statement, vier landen. Voor de anderen.",
-  price: 4495,
+  price: 4990,
   cost: 0,
   image: "/images/baddies-tee-front.jpg",
   images: ["/images/baddies-tee-front.jpg", "/images/baddies-tee-back.jpg"],

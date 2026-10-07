@@ -1,5 +1,5 @@
 /** Delivery options. Fees in cents incl. VAT; standard carriers are free from FREE_FROM. */
-export const FREE_FROM = 5000;
+export const FREE_FROM = 0;
 export const STANDARD_FEE = 595;
 
 export const SHIPPING_OPTIONS = [
