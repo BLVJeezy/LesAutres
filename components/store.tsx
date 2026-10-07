@@ -43,6 +43,7 @@ import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } fr
 import { ShirtFallback } from "./shirt-fallback";
 import { Lookbook } from "./lookbook";
 import { AnthemVideo } from "./anthem-video";
+import { ExpressCheckout } from "./express";
 const I18n = createContext<Dict>(DICTS.nl);
 const useT = () => useContext(I18n);
 function Wordmark() {
@@ -307,6 +308,7 @@ function BundlePicker({
   soldOut,
   isSoldOut,
   onAdd,
+  express,
 }: {
   unit: number;
   image: string;
@@ -315,6 +317,7 @@ function BundlePicker({
   soldOut: boolean;
   isSoldOut: (s: Size) => boolean;
   onAdd: (sizes: Size[]) => void;
+  express?: (sizes: Size[], amount: number) => ReactNode;
 }) {
   const [qty, setQty] = useState<number>(1);
   const [picked, setPicked] = useState<Size[]>([]);
@@ -412,6 +415,7 @@ function BundlePicker({
         </span>
         <ArrowUpRight size={22} />
       </button>
+      {!soldOut && qty <= maxQty && express?.(Array.from({ length: qty }, (_, i) => sizeAt(i)), price)}
     </div>
   );
 }
@@ -947,6 +951,17 @@ export default function Store({
                 soldOut={dropSoldOut}
                 isSoldOut={soldOut}
                 onAdd={addBundle}
+                express={(picked, amount) => (
+                  <ExpressCheckout
+                    items={sizes
+                      .filter((s) => picked.includes(s))
+                      .map((s) => ({ productId: featured.id, size: s, quantity: picked.filter((p) => p === s).length }))}
+                    amount={amount}
+                    lang={lang}
+                    cartId={cartId}
+                    label={t.expressOr}
+                  />
+                )}
               />
             ) : (
               <>
