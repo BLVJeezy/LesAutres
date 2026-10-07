@@ -8,7 +8,7 @@ export function NavLinks({ openOrders }: { openOrders: number }) {
   const links = [
     { href: "/admin", label: "Home", icon: Home },
     { href: "/admin/orders", label: "Bestellingen", icon: Inbox, count: openOrders },
-    { href: "/admin/checkouts", label: "Verlaten checkouts", icon: ShoppingCart },
+    { href: "/admin/checkouts", label: "Checkouts", icon: ShoppingCart },
     { href: "/admin/products", label: "Producten", icon: Tag },
     { href: "/admin/subscribers", label: "Inschrijvingen", icon: Mail },
   ];
