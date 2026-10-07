@@ -310,25 +310,27 @@ function BundlePicker({
   image,
   defaultSize,
   maxQty,
+  soldOut,
+  isSoldOut,
   onAdd,
 }: {
   unit: number;
   image: string;
   defaultSize?: Size;
   maxQty: number;
+  soldOut: boolean;
+  isSoldOut: (s: Size) => boolean;
   onAdd: (sizes: Size[]) => void;
 }) {
-  const [qty, setQty] = useState<number>(2);
+  const [qty, setQty] = useState<number>(1);
   const [picked, setPicked] = useState<Size[]>([]);
-  const sizeAt = (i: number) => picked[i] ?? defaultSize ?? "M";
+  const firstFree = sizes.find((s) => !isSoldOut(s)) ?? "M";
+  const fallback = defaultSize && !isSoldOut(defaultSize) ? defaultSize : sizes.includes("M") && !isSoldOut("M") ? "M" : firstFree;
+  const sizeAt = (i: number) => picked[i] ?? fallback;
   const price = bundlePriceFor(qty, unit);
   const t = useT();
   return (
     <div className="bundles">
-      <div className="selector-head">
-        <span>{t.bundleHead}</span>
-        <span className="micro">{t.mixSizes}</span>
-      </div>
       <div className="bundle-options" role="radiogroup" aria-label={t.teeCount}>
         {BUNDLES.map((b) => {
           const total = bundlePriceFor(b.qty, unit);
@@ -398,8 +400,8 @@ function BundlePicker({
               }}
             >
               {sizes.map((s) => (
-                <option key={s} value={s}>
-                  {s}
+                <option key={s} value={s} disabled={isSoldOut(s)}>
+                  {isSoldOut(s) ? `${s} — ${t.soldOut}` : s}
                 </option>
               ))}
             </select>
@@ -408,11 +410,11 @@ function BundlePicker({
       </div>
       <button
         className="buy bundle-add"
-        disabled={qty > maxQty}
+        disabled={soldOut || qty > maxQty}
         onClick={() => onAdd(Array.from({ length: qty }, (_, i) => sizeAt(i)))}
       >
         <span>
-          {t.teesToBag(qty, money(price))}
+          {soldOut ? t.soldOut : t.teesToBag(qty, money(price))}
         </span>
         <ArrowUpRight size={22} />
       </button>
@@ -651,7 +653,6 @@ export default function Store({
     } catch {}
     document.cookie = `${LANG_COOKIE}=${l}; path=/; max-age=31536000; samesite=lax`;
   }
-  const stock = size ? featured.stock[size] : null;
   const soldOut = (s: Size) => featured.stock[s] <= 0;
   const productOf = (id: string) => products.find((p) => p.id === id);
   useEffect(() => {
@@ -906,7 +907,7 @@ export default function Store({
             </div>
             {featured.description && (
               <p className="description">
-                {lang !== "nl" && featured.description.trim() === DICTS.nl.description ? t.description : featured.description}
+                {lang !== "nl" ? t.description : featured.description}
               </p>
             )}
             {!live && (
@@ -918,26 +919,21 @@ export default function Store({
                 aria-live="polite"
                 aria-label={dropSoldOut ? t.counterSoldOut : (left ?? 0) <= 8 ? t.counterLast : t.counterLeft(left ?? 0, drop.limit)}
               >
-                <div className="drop-counter-head">
+                <div className="drop-counter-row">
                   <span className="drop-live">
-                    <i /> LIVE · DROP 001
+                    <i /> LIVE
                   </span>
-                  <span>{t.limited}</span>
-                </div>
-                <div className="drop-counter-main">
                   {dropSoldOut ? (
                     <b className="word">{t.soldOut}</b>
                   ) : (left ?? 0) <= 8 ? (
                     <b className="word">{t.lastPieces}</b>
                   ) : (
-                    <>
-                      <b>{left}</b>
-                      <span>
-                        <em>/{drop.limit}</em>
-                        {t.teesLeft}
-                      </span>
-                    </>
+                    <b>
+                      {left}
+                      <em>/{drop.limit}</em> <small>{t.teesLeft}</small>
+                    </b>
                   )}
+                  <span className="drop-limited">{t.limited}</span>
                 </div>
                 <div className="drop-segments" aria-hidden>
                   {Array.from({ length: drop.limit }, (_, i) => (
@@ -953,33 +949,34 @@ export default function Store({
                 {t.sizeChart} <ArrowUpRight size={12} />
               </button>
             </div>
-            <div className="sizes">
-              {sizes.map((s) => (
-                <button
-                  key={s}
-                  aria-pressed={s === size}
-                  aria-label={soldOut(s) ? t.sizeSoldOut(s) : s}
-                  className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
-                  onClick={() => chooseSize(s)}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
             <FitAdvisor onPick={(s) => { chooseSize(s); trackEvent("size_advice", { size: s }); }} />
-            <div className="stock-line" aria-live="polite">
-              {stock !== null && stock <= 3 ? (
-                <>
-                  <span className="pink-dot" /> {t.stockLeft(stock)}
-                  {!live && t.previewStock}
-                </>
-              ) : (
-                <>{t.fitLine}</>
-              )}
-            </div>
-            {cta}
-            {BUNDLE_PRODUCTS.includes(featured.id) && (
-              <BundlePicker unit={price} image={featured.image} defaultSize={size} maxQty={left === null ? 20 : Math.max(0, Math.min(20, left))} onAdd={addBundle} />
+            {BUNDLE_PRODUCTS.includes(featured.id) ? (
+              <BundlePicker
+                unit={price}
+                image={featured.image}
+                defaultSize={size}
+                maxQty={left === null ? 20 : Math.max(0, Math.min(20, left))}
+                soldOut={dropSoldOut}
+                isSoldOut={soldOut}
+                onAdd={addBundle}
+              />
+            ) : (
+              <>
+                <div className="sizes">
+                  {sizes.map((s) => (
+                    <button
+                      key={s}
+                      aria-pressed={s === size}
+                      aria-label={soldOut(s) ? t.sizeSoldOut(s) : s}
+                      className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
+                      onClick={() => chooseSize(s)}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+                {cta}
+              </>
             )}
             <ul className="trust-list">
               <li>
@@ -1212,15 +1209,11 @@ export default function Store({
         <div className="sticky-buy">
           <div>
             <b>{featured.name.toUpperCase()}</b>
-            <span>{size ? t.sizeShort(size) : money(price)}</span>
+            <span>{money(price)}</span>
           </div>
-          {size ? (
-            cta
-          ) : (
-            <a href="#drop" className="buy">
-              {t.chooseSize} <ArrowUpRight size={20} />
-            </a>
-          )}
+          <a href="#drop" className="buy">
+            {t.addToBag} <ArrowUpRight size={20} />
+          </a>
         </div>
       )}
       {consent === null && (
