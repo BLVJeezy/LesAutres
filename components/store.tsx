@@ -846,17 +846,29 @@ export default function Store({
               <p className="preview-note">PREVIEW · voorbeeldprijs & voorraad</p>
             )}
             {drop && (
-              <div className={`drop-counter ${left !== null && left <= 10 ? "low" : ""}`} aria-live="polite">
-                <div>
-                  <span>
-                    <span className="pink-dot" />{" "}
-                    {dropSoldOut ? "UITVERKOCHT" : `NOG ${Math.max(0, left ?? 0)} VAN ${drop.limit}`}
+              <div
+                className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
+                aria-live="polite"
+                aria-label={dropSoldOut ? "Drop 001 is uitverkocht" : `Nog ${Math.max(0, left ?? 0)} van ${drop.limit} tees beschikbaar`}
+              >
+                <div className="drop-counter-head">
+                  <span className="drop-live">
+                    <i /> LIVE · DROP 001
                   </span>
-                  <span>GELIMITEERDE OPLAGE · DROP 001</span>
+                  <span>GELIMITEERDE OPLAGE</span>
                 </div>
-                <i>
-                  <b style={{ width: `${Math.max(2, (1 - Math.max(0, left ?? 0) / drop.limit) * 100)}%` }} />
-                </i>
+                <div className="drop-counter-main">
+                  <b>{dropSoldOut ? "0" : Math.max(0, left ?? 0)}</b>
+                  <span>
+                    <em>/{drop.limit}</em>
+                    {dropSoldOut ? "UITVERKOCHT" : "TEES OVER"}
+                  </span>
+                </div>
+                <div className="drop-segments" aria-hidden>
+                  {Array.from({ length: drop.limit }, (_, i) => (
+                    <span key={i} className={i < drop.limit - Math.max(0, left ?? 0) ? "gone" : ""} />
+                  ))}
+                </div>
               </div>
             )}
             <p className="single-edition">OFF-WHITE · ORIGINAL PRINT</p>
