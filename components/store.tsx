@@ -976,7 +976,7 @@ export default function Store({
                 alt="Betaal met Revolut Pay, Apple Pay, Google Pay, Visa of Mastercard"
                 width={1200}
                 height={96}
-                sizes="(max-width: 700px) 92vw, 460px"
+                sizes="(max-width: 700px) 80vw, 460px"
               />
             </div>
             {!live && (
@@ -1091,18 +1091,20 @@ export default function Store({
               <ArrowUpRight size={20} />
             </a>
           </div>
+          <div className="crew-gallery">
           <figure className="crew-a">
-            <Image src="/images/lookbook-10.jpg" alt="De crew in de Baddies Tee" width={1070} height={1600} sizes="(max-width: 700px) 92vw, 30vw" />
+            <Image src="/images/lookbook-10.jpg" alt="De crew in de Baddies Tee" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 30vw" />
           </figure>
           <figure className="crew-b">
-            <Image src="/images/lookbook-01.jpg" alt="Les Autres Baddies Tee op film" width={1070} height={1600} sizes="(max-width: 700px) 92vw, 40vw" />
+            <Image src="/images/lookbook-01.jpg" alt="Les Autres Baddies Tee op film" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 40vw" />
           </figure>
           <figure className="crew-c">
-            <Image src="/images/lookbook-05.jpg" alt="Baddies Tee vastgehouden aan de schouders" width={1070} height={1600} sizes="(max-width: 700px) 45vw, 20vw" />
+            <Image src="/images/lookbook-05.jpg" alt="Baddies Tee vastgehouden aan de schouders" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 20vw" />
           </figure>
           <figure className="crew-d">
-            <Image src="/images/lookbook-03.jpg" alt="Twee vrienden in de Baddies Tee" width={1600} height={1070} sizes="(max-width: 700px) 45vw, 25vw" />
+            <Image src="/images/lookbook-03.jpg" alt="Twee vrienden in de Baddies Tee" width={1600} height={1070} sizes="(max-width: 700px) 80vw, 25vw" />
           </figure>
+          </div>
         </section>
         <section className="manifesto">
           <span className="micro">IT WAS NEVER JUST A T-SHIRT.</span>
