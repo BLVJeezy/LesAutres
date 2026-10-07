@@ -55,6 +55,7 @@ export function demoOrders(productId: string, price = 4495, unitCost = 900, now 
         vat,
         profit: net - vat - cost,
         shippedAt: d > 2 ? created + 86400 : null,
+        test: false,
       });
     }
   }

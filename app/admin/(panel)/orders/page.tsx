@@ -29,6 +29,9 @@ export default async function Orders({
     <>
       <div className="admin-head">
         <h1>Bestellingen</h1>
+        <a className="admin-btn secondary" href="/admin/labels" target="_blank" rel="noopener">
+          Verzendlabels printen
+        </a>
         {firebaseConfigured() && revolutConfigured() && !webhook && (
           <form action={setupRevolutWebhookAction}>
             <button className="admin-btn">Revolut-webhook instellen</button>
@@ -87,6 +90,7 @@ export default async function Orders({
                         ) : (
                           <span className="badge">Betaald</span>
                         )}
+                        {o.test && <span className="badge attention">Test</span>}
                       </td>
                       <td className="c-ship">
                         <span className={`badge ${tone}`}>{label}</span>

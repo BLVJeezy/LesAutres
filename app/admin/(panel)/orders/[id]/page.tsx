@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
 import { shippingLabel } from "@/lib/shipping";
 import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
-import { toggleRefundedAction, toggleShippedAction } from "../../../actions";
+import { toggleRefundedAction, toggleShippedAction, toggleTestAction } from "../../../actions";
 import { STATUS_BADGE } from "../status";
 import { ShipForm } from "./ship-form";
 import { carrierForShipping, isCarrier } from "@/lib/tracking";
@@ -36,6 +36,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           <h1>#{number}</h1>
           <span className="badge">{status === "refunded" ? "Terugbetaald" : "Betaald"}</span>
           <span className={`badge ${tone}`}>{label}</span>
+          {order.test && <span className="badge attention">Test · niet meegeteld</span>}
         </div>
         <span className="admin-note">{date}</span>
       </div>
@@ -69,6 +70,13 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
                 })}
               </ul>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
+                <form action={toggleTestAction}>
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <input type="hidden" name="test" value={order.test ? "0" : "1"} />
+                  <button className="admin-btn secondary">
+                    {order.test ? "Toch meetellen" : "Markeer als test"}
+                  </button>
+                </form>
                 <form action={toggleRefundedAction}>
                   <input type="hidden" name="orderId" value={order.id} />
                   <input type="hidden" name="refunded" value={status === "refunded" ? "0" : "1"} />

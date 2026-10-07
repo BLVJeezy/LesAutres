@@ -206,13 +206,22 @@ export type Order = {
   trackingCode?: string;
   trackingUrl?: string | null;
   shippedMailAt?: number | null;
+  /** Test payment: shown in the order list but left out of revenue, stats and the drop counter. */
+  test: boolean;
 };
+
+/** Test payments by the shop owner are never counted. */
+const TEST_NAMES = /jason\s+balongo/i;
+const TEST_EMAILS = ["jasonbalongo@gmail.com"];
+const isTest = (d: { test?: boolean; name?: string; email?: string }) =>
+  d.test ?? (TEST_NAMES.test(d.name ?? "") || TEST_EMAILS.includes((d.email ?? "").toLowerCase()));
 
 const exVat = (cents: number) => Math.round(cents / (1 + VAT_RATE));
 const ORDERS = "orders";
 
 /** Firestore has no nested arrays, so lines are stored as objects. */
-export type OrderDoc = Omit<Order, "lines"> & {
+export type OrderDoc = Omit<Order, "lines" | "test"> & {
+  test?: boolean;
   status: "pending" | "paid";
   checkoutUrl?: string | null;
   reminderSentAt?: number | null;
@@ -250,6 +259,7 @@ export function fromDoc(d: OrderDoc): Order {
     trackingCode: d.trackingCode ?? "",
     trackingUrl: d.trackingUrl ?? null,
     shippedMailAt: d.shippedMailAt ?? null,
+    test: isTest(d),
   };
 }
 
@@ -454,6 +464,15 @@ export async function shipOrder(orderId: string, carrier: CarrierId, code: strin
   return { ok: true, mailed };
 }
 
+export async function setOrderTest(orderId: string, test: boolean) {
+  const db = firestore();
+  if (!db) return false;
+  const ref = db.collection(ORDERS).doc(orderId);
+  if (!(await ref.get()).exists) return false;
+  await ref.update({ test, updatedAt: Date.now() });
+  return true;
+}
+
 export async function setOrderRefunded(orderId: string, refunded: boolean) {
   const db = firestore();
   if (!db) return false;
@@ -500,5 +519,6 @@ export async function listAbandonedCheckouts(limit = 200) {
       return { ...fromDoc(d), reminderSentAt: d.reminderSentAt ?? null };
     })
     .sort((a, b) => b.created - a.created)
+    .filter((o) => !o.test)
     .slice(0, limit);
 }
