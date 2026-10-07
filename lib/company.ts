@@ -23,10 +23,10 @@ export const company = {
   paymentCollector: "Solyn Global Ltd (Londen, Verenigd Koninkrijk)",
   /** Shop policy. */
   countries: ["België", "Nederland", "Luxemburg", "Frankrijk", "Duitsland", "Spanje"],
-  shippingCost: "gratis met bpost, GLS of UPS vanaf € 50 (anders € 5,95); persoonlijke levering door de CEO kost € 500 en door Issa zelf € 5.000",
+  shippingCost: "gratis met bpost, GLS of UPS vanaf € 50 (anders € 5,95); persoonlijke levering door Issa zelf kost € 10.000",
   dispatchTime: "binnen 48 uur na je betaling",
   deliveryTime: "meestal 1 tot 3 werkdagen in België en 2 tot 6 werkdagen in de andere landen",
-  carrier: "bpost, GLS of UPS (naar keuze), of persoonlijk door de CEO of door Issa zelf",
+  carrier: "bpost, GLS of UPS (naar keuze), of persoonlijk door Issa zelf",
   updated: "27 september 2026",
 };
 

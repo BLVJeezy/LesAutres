@@ -190,7 +190,7 @@ export type Order = {
   phone: string;
   address: string;
   lines: OrderLine[];
-  /** Delivery method id (bpost, gls, ups, ceo) and its fee in cents; included in total. */
+  /** Delivery method id (bpost, gls, ups, issa) and its fee in cents; included in total. */
   shippingMethod: string;
   shippingFee: number;
   /** Bundle discount in cents, already subtracted from total. */
