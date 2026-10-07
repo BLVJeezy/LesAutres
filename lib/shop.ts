@@ -4,7 +4,7 @@ import { UNLIMITED_STOCK } from "./bundles";
 import { shippingFee, shippingLabel, type ShippingId } from "./shipping";
 import { customerEmail, mailConfigured, sendMail, shippedEmail, shopEmail, type MailLine } from "./mail";
 import { trackingUrl, type CarrierId } from "./tracking";
-import { createRevolutOrder, getRevolutOrder, type NewOrder } from "./revolut";
+import { createRevolutOrder, getRevolutOrder, type NewOrder, type RevolutAddress, type RevolutOrder } from "./revolut";
 import { firestore } from "./firebase";
 import {
   emptyStock,
@@ -255,8 +255,9 @@ export function fromDoc(d: OrderDoc): Order {
 
 export type Checkout = {
   lines: OrderLine[];
-  customer: NewOrder["customer"];
-  shipping: NewOrder["shipping"];
+  /** Left out for express checkout: Revolut collects email and address. */
+  customer?: NewOrder["customer"];
+  shipping?: NewOrder["shipping"];
   shippingMethod: ShippingId;
   discount: number;
   /** Bag id whose drop reservation is released once paid. */
@@ -265,8 +266,8 @@ export type Checkout = {
   origin: string;
 };
 
-/** Stores a pending order in Firestore, opens a Revolut order for it and returns the payment page URL. */
-export async function startCheckout(c: Checkout): Promise<string> {
+/** Stores a pending order in Firestore and opens a Revolut order for it. */
+export async function startCheckout(c: Checkout): Promise<{ id: string; url: string | null; token: string | null }> {
   const db = firestore();
   if (!db) throw new Error("Firebase is niet geconfigureerd.");
   const id = `LA-${Date.now().toString(36).toUpperCase()}-${randomBytes(3).toString("hex").toUpperCase()}`;
@@ -279,10 +280,10 @@ export async function startCheckout(c: Checkout): Promise<string> {
     status: "pending",
     paymentId: null,
     created: Math.floor(Date.now() / 1000),
-    email: c.customer.email,
-    name: c.customer.full_name,
-    phone: c.customer.phone ?? "",
-    address: [s.street_line_1, s.street_line_2, `${s.postcode} ${s.city}`, s.country_code].filter(Boolean).join(", "),
+    email: c.customer?.email ?? "",
+    name: c.customer?.full_name ?? "",
+    phone: c.customer?.phone ?? "",
+    address: s ? formatAddress(s) : "",
     lines: c.lines.map(([productId, size, qty, price, cost]) => ({ productId, size, qty, price, cost })),
     shippingMethod: c.shippingMethod,
     shippingFee: fee,
@@ -310,8 +311,23 @@ export async function startCheckout(c: Checkout): Promise<string> {
     .collection(ORDERS)
     .doc(id)
     .update({ paymentId: order.id, checkoutUrl: order.checkout_url ?? null, updatedAt: Date.now() });
-  if (!order.checkout_url) throw new Error("Revolut gaf geen betaalpagina terug.");
-  return order.checkout_url;
+  return { id, url: order.checkout_url ?? null, token: order.token ?? null };
+}
+
+const formatAddress = (a: RevolutAddress) =>
+  [a.street_line_1, a.street_line_2, [a.postcode, a.city].filter(Boolean).join(" "), a.region, a.country_code]
+    .filter(Boolean)
+    .join(", ");
+
+/** Customer details Revolut collected (express checkout), for orders that were created without them. */
+function contactFrom(remote: RevolutOrder) {
+  const address = remote.shipping?.address ?? remote.shipping_address;
+  return {
+    email: (remote.customer?.email ?? remote.shipping?.contact?.email ?? "").toLowerCase(),
+    name: remote.shipping?.contact?.name ?? remote.customer?.full_name ?? "",
+    phone: remote.shipping?.contact?.phone ?? remote.customer?.phone ?? "",
+    address: address ? formatAddress(address) : "",
+  };
 }
 
 /**
@@ -336,7 +352,14 @@ export async function confirmOrder(id: string): Promise<boolean> {
   const first = await db.runTransaction(async (tx) => {
     const cur = (await tx.get(ref)).data() as OrderDoc;
     if (cur.status === "paid") return false;
-    tx.update(ref, { status: "paid", created: Math.floor(Date.now() / 1000), updatedAt: Date.now() });
+    const c = contactFrom(remote);
+    const fill = {
+      ...(!cur.email && c.email && { email: c.email }),
+      ...(!cur.name && c.name && { name: c.name }),
+      ...(!cur.phone && c.phone && { phone: c.phone }),
+      ...(!cur.address && c.address && { address: c.address }),
+    };
+    tx.update(ref, { ...fill, status: "paid", created: Math.floor(Date.now() / 1000), updatedAt: Date.now() });
     return true;
   });
   if (first) {
@@ -376,12 +399,17 @@ async function sendOrderEmails(id: string) {
   for (const r of results) if (r.status === "rejected") console.error("Sending order e-mail failed", r.reason);
 }
 
+/** Our order id for a Revolut order id. */
+export async function orderIdForPayment(paymentId: string): Promise<string | null> {
+  const db = firestore();
+  if (!db || !/^[\w-]{1,64}$/.test(paymentId)) return null;
+  const snap = await db.collection(ORDERS).where("paymentId", "==", paymentId).limit(1).get();
+  return snap.docs[0]?.id ?? null;
+}
+
 /** Looks up our order by the Revolut order id (used by the webhook). */
 export async function confirmByPaymentId(paymentId: string): Promise<boolean> {
-  const db = firestore();
-  if (!db) return false;
-  const snap = await db.collection(ORDERS).where("paymentId", "==", paymentId).limit(1).get();
-  const id = snap.docs[0]?.id;
+  const id = await orderIdForPayment(paymentId);
   return id ? confirmOrder(id) : false;
 }
 

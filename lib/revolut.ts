@@ -18,6 +18,19 @@ export type RevolutOrder = {
   created_at?: string;
   merchant_order_data?: { reference?: string };
   merchant_order_ext_ref?: string;
+  /** Filled by Revolut Pay fast checkout / Apple Pay / Google Pay. */
+  customer?: { email?: string; full_name?: string; phone?: string };
+  shipping?: { address?: RevolutAddress; contact?: { name?: string; email?: string; phone?: string } };
+  shipping_address?: RevolutAddress;
+};
+
+export type RevolutAddress = {
+  street_line_1?: string;
+  street_line_2?: string;
+  postcode?: string;
+  city?: string;
+  region?: string;
+  country_code?: string;
 };
 
 async function call<T>(path: string, init: { method?: string; body?: unknown } = {}): Promise<T> {
@@ -45,8 +58,8 @@ export type NewOrder = {
   reference: string;
   description: string;
   redirectUrl: string;
-  customer: { email: string; full_name: string; phone?: string };
-  shipping: {
+  customer?: { email: string; full_name: string; phone?: string };
+  shipping?: {
     street_line_1: string;
     street_line_2?: string;
     postcode: string;
@@ -62,8 +75,8 @@ export function createRevolutOrder(o: NewOrder) {
       amount: o.amount,
       currency: "EUR",
       description: o.description.slice(0, 1000),
-      customer: o.customer,
-      shipping_address: o.shipping,
+      ...(o.customer && { customer: o.customer }),
+      ...(o.shipping && { shipping_address: o.shipping }),
       redirect_url: o.redirectUrl,
       merchant_order_data: { reference: o.reference },
       metadata: { shop: "les-autres", reference: o.reference },

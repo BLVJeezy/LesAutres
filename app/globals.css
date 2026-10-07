@@ -2759,3 +2759,10 @@ footer {
 .upsell { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 14px 0 6px; padding: 12px 14px; border: 1px dashed var(--pink); border-radius: 6px; background: #d2577c0f; }
 .upsell p { margin: 0; font-size: 13px; }
 .upsell .text-button { white-space: nowrap; color: var(--pink); font-weight: 700; }
+
+/* Express checkout */
+.express { display: grid; gap: 8px; margin-top: 12px; }
+.express-or { display: flex; align-items: center; gap: 10px; font: 600 9px monospace; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+.express-or::before, .express-or::after { content: ""; flex: 1; height: 1px; background: #0000001a; }
+.express:not(.ready) .express-or { visibility: hidden; }
+.express-wallet:empty { display: none; }

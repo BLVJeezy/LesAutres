@@ -3,7 +3,7 @@ import { cookies, headers } from "next/headers";
 import { DICTS, LANG_COOKIE, detectLang, isLang } from "@/lib/i18n";
 import { money } from "@/lib/catalog";
 import { shippingLabel } from "@/lib/shipping";
-import { confirmOrder, orderSummary } from "@/lib/shop";
+import { confirmOrder, orderIdForPayment, orderSummary } from "@/lib/shop";
 import { ClearCart } from "./clear-cart";
 
 export const metadata = { title: "Bedankt — Les Autres", robots: "noindex" };
@@ -21,9 +21,11 @@ async function load(orderId: string | undefined) {
 export default async function Bedankt({
   searchParams,
 }: {
-  searchParams: Promise<{ order?: string }>;
+  searchParams: Promise<{ order?: string; _rp_oid?: string; rp_oid?: string }>;
 }) {
-  const { order } = await searchParams;
+  const params = await searchParams;
+  const revolutId = params._rp_oid ?? params.rp_oid;
+  const order = params.order ?? (revolutId ? (await orderIdForPayment(revolutId).catch(() => null)) ?? undefined : undefined);
   const summary = await load(order);
   const saved = (await cookies()).get(LANG_COOKIE)?.value;
   const d = DICTS[isLang(saved) ? saved : detectLang((await headers()).get("accept-language"))];
