@@ -908,7 +908,7 @@ export default function Store({
               <div
                 className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
                 aria-live="polite"
-                aria-label={dropSoldOut ? t.counterSoldOut : (left ?? 0) <= 8 ? t.counterLast : t.counterLeft(left ?? 0, drop.limit)}
+                aria-label={dropSoldOut ? t.counterSoldOut  : t.counterLeft(left ?? 0, drop.limit)}
               >
                 <div className="drop-counter-row">
                   <span className="drop-live">
@@ -916,8 +916,6 @@ export default function Store({
                   </span>
                   {dropSoldOut ? (
                     <b className="word">{t.soldOut}</b>
-                  ) : (left ?? 0) <= 8 ? (
-                    <b className="word">{t.lastPieces}</b>
                   ) : (
                     <b>
                       {left}

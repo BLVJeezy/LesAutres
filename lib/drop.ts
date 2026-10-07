@@ -5,7 +5,7 @@ import { listOrders } from "./shop";
 /** Drop 001 is a limited run: this many tees in total, all sizes together. */
 export const DROP_LIMIT = 30;
 /** Tees of the drop already sold outside the webshop (in person, DM); counted as sold. */
-export const SOLD_OFFLINE = 22;
+export const SOLD_OFFLINE = 7;
 /** How long tees in someone's bag stay reserved for them. */
 export const RESERVATION_MS = 10 * 60 * 1000;
 
