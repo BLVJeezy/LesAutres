@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ExternalLink, Home, Inbox, Mail, Tag } from "lucide-react";
+import { ExternalLink, Home, Inbox, Mail, ShoppingCart, Tag } from "lucide-react";
 
 export function NavLinks({ openOrders }: { openOrders: number }) {
   const path = usePathname();
   const links = [
     { href: "/admin", label: "Home", icon: Home },
     { href: "/admin/orders", label: "Bestellingen", icon: Inbox, count: openOrders },
+    { href: "/admin/checkouts", label: "Verlaten checkouts", icon: ShoppingCart },
     { href: "/admin/products", label: "Producten", icon: Tag },
     { href: "/admin/subscribers", label: "Inschrijvingen", icon: Mail },
   ];
