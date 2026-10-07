@@ -2745,3 +2745,8 @@ footer {
 .drop-counter .drop-segments { margin-top: 8px; gap: 1px; }
 .drop-counter .drop-segments span { height: 3px; }
 .bundles { margin-top: 14px; }
+
+/* Size help on one line, right under the counter */
+.selector-head.size-help { margin-top: 14px; min-height: 0; gap: 12px; }
+.selector-head.size-help .text-button { white-space: nowrap; }
+.size-help + .fit-advisor { margin-top: 10px; }
