@@ -346,7 +346,7 @@ export const legalPages: Record<string, Page> = {
         body: (
           <ol>
             <li>Meld binnen 14 dagen na ontvangst dat je wilt herroepen: online via <Link href="/herroepen">dit formulier</Link> of per e-mail naar {email()}.</li>
-            <li>Stuur het artikel ongedragen, ongewassen en met labels binnen 14 dagen terug naar het adres hieronder. De retourkosten zijn voor jou.</li>
+            <li>Stuur het artikel ongedragen, ongewassen en met labels binnen 14 dagen terug naar het retouradres dat je van ons krijgt. De retourkosten zijn voor jou.</li>
             <li>Je krijgt je geld binnen 14 dagen terug op hetzelfde betaalmiddel, zodra we het artikel (of je verzendbewijs) hebben.</li>
           </ol>
         ),
@@ -379,8 +379,17 @@ export const legalPages: Record<string, Page> = {
         title: "Terugsturen",
         body: (
           <p>
-            Stuur het artikel zonder onnodige vertraging en uiterlijk binnen 14 dagen na je herroeping terug naar:{" "}
-            <b>{fill(returnAddress(), "retouradres")}</b>. De kosten voor het terugsturen zijn voor jou. Stuur het
+            Stuur het artikel zonder onnodige vertraging en uiterlijk binnen 14 dagen na je herroeping terug
+            {returnAddress() ? (
+              <>
+                {" "}naar: <b>{returnAddress()}</b>.
+              </>
+            ) : (
+              <>
+                . Na je herroeping krijg je van ons per e-mail het retouradres; je kunt het ook vragen via {email()}.
+              </>
+            )}{" "}
+            De kosten voor het terugsturen zijn voor jou. Stuur het
             artikel goed verpakt terug en bewaar je verzendbewijs.
           </p>
         ),
