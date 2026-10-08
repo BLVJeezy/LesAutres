@@ -346,8 +346,8 @@ export const legalPages: Record<string, Page> = {
         body: (
           <ol>
             <li>Meld binnen 14 dagen na ontvangst dat je wilt herroepen: online via <Link href="/herroepen">dit formulier</Link> of per e-mail naar {email()}.</li>
-            <li>Stuur het artikel ongedragen, ongewassen en met labels binnen 14 dagen terug naar het retouradres dat je van ons krijgt. De retourkosten zijn voor jou.</li>
-            <li>Je krijgt je geld binnen 14 dagen terug op hetzelfde betaalmiddel, zodra we het artikel (of je verzendbewijs) hebben.</li>
+            <li>Stuur het artikel ongedragen, ongewassen en met labels binnen 14 dagen terug naar <b>{returnAddress()}</b>, met een verzending mét trackingcode, en mail ons de trackinglink. De retourkosten zijn voor jou.</li>
+            <li>We controleren het artikel zodra het binnen is. Is alles in orde, dan betalen we je terug op hetzelfde betaalmiddel, uiterlijk binnen 14 dagen na je herroeping.</li>
           </ol>
         ),
       },
@@ -389,8 +389,10 @@ export const legalPages: Record<string, Page> = {
                 . Na je herroeping krijg je van ons per e-mail het retouradres; je kunt het ook vragen via {email()}.
               </>
             )}{" "}
-            De kosten voor het terugsturen zijn voor jou. Stuur het
-            artikel goed verpakt terug en bewaar je verzendbewijs.
+            De kosten voor het terugsturen zijn voor jou. Stuur het artikel goed verpakt terug met een verzending
+            met track &amp; trace (bijvoorbeeld bpost of een pakketpunt) en bezorg ons de trackingcode of -link via{" "}
+            {email()} of het herroepingsformulier. Zonder trackingcode kunnen we een verloren retourpakket niet
+            opvolgen; tot het bij ons aankomt, blijft het pakket jouw verantwoordelijkheid. Bewaar je verzendbewijs.
           </p>
         ),
       },
@@ -407,12 +409,19 @@ export const legalPages: Record<string, Page> = {
       {
         title: "Terugbetaling",
         body: (
+          <>
           <p>
             We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten (tot het bedrag van onze goedkoopste standaardlevering; de meerprijs voor levering door Issa betalen we niet terug), binnen 14 dagen nadat
             we je herroeping ontvangen. We gebruiken hetzelfde betaalmiddel als waarmee je betaalde, tenzij je
             uitdrukkelijk iets anders vraagt; dat kost je niets. We mogen wachten met terugbetalen tot we het artikel
             terug hebben of tot je aantoont dat je het hebt teruggestuurd.
           </p>
+          <p>
+            Zodra je retour aankomt, controleren we het artikel. Is het ongedragen, ongewassen en met labels, dan
+            keuren we de retour goed en betalen we het volledige bedrag terug. Is het artikel meer gebruikt dan nodig
+            om het te passen, dan trekken we enkel de waardevermindering af en laten we je dat vooraf per e-mail weten.
+          </p>
+          </>
         ),
       },
       {

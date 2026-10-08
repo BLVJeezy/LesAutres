@@ -18,7 +18,7 @@ export const company = {
   email: "support@lesautresbe.com",
   phone: "",
   /** Where returns must be sent; defaults to the registered office. */
-  returnAddress: "",
+  returnAddress: "Les Autres, Diestersteenweg 66, 3970 Leopoldsburg, België",
   /** Company that collects card payments on behalf of the seller (name shown on the Revolut payment page). */
   paymentCollector: "SOLYN GLOBAL LTD",
   /** Shop policy. */
