@@ -409,6 +409,7 @@ export const legalPages: Record<string, Page> = {
       {
         title: "Terugbetaling",
         body: (
+          <>
           <p>
             We betalen het volledige bedrag terug, inclusief de oorspronkelijke verzendkosten (tot het bedrag van onze goedkoopste standaardlevering; de meerprijs voor levering door Issa betalen we niet terug), binnen 14 dagen nadat
             we je herroeping ontvangen. We gebruiken hetzelfde betaalmiddel als waarmee je betaalde, tenzij je
@@ -420,6 +421,7 @@ export const legalPages: Record<string, Page> = {
             keuren we de retour goed en betalen we het volledige bedrag terug. Is het artikel meer gebruikt dan nodig
             om het te passen, dan trekken we enkel de waardevermindering af en laten we je dat vooraf per e-mail weten.
           </p>
+          </>
         ),
       },
       {
