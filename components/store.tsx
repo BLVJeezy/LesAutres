@@ -1193,7 +1193,7 @@ export default function Store({
           {[
             company.legalName && `${company.legalName}${company.legalForm ? ` ${company.legalForm}` : ""}`,
             company.address,
-            company.enterpriseNumber && `KBO ${company.enterpriseNumber}`,
+            company.enterpriseNumber && `Company No. ${company.enterpriseNumber}`,
             company.vatNumber && company.vatNumber !== company.enterpriseNumber && `btw ${company.vatNumber}`,
             company.email,
           ]
