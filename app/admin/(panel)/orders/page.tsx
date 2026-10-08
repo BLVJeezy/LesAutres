@@ -9,7 +9,7 @@ import { setupRevolutWebhookAction } from "../../actions";
 import { STATUS_BADGE } from "./status";
 import { OrderRow } from "./order-row";
 
-const FILTERS = { all: "Alle", open: "Niet verzonden", shipped: "Verzonden", refunded: "Terugbetaald" } as const;
+const FILTERS = { all: "Alle", open: "Niet verzonden", shipped: "Verzonden", refunded: "Terugbetaald", test: "Test" } as const;
 type Filter = keyof typeof FILTERS;
 
 export default async function Orders({
@@ -23,7 +23,10 @@ export default async function Orders({
   const orders = await listOrders();
   const webhook = await getSetting("revolutWebhookUrl").catch(() => undefined);
   const numbers = orderNumbers(orders);
-  const shown = filter === "all" ? orders : orders.filter((o) => orderStatus(o) === filter);
+  const shown =
+    filter === "test"
+      ? orders.filter((o) => o.test)
+      : orders.filter((o) => !o.test && (filter === "all" || orderStatus(o) === filter));
 
   return (
     <>
