@@ -163,6 +163,29 @@ export async function deleteSubscriberAction(form: FormData) {
 
 export async function testMailAction(_: FormState, form: FormData): Promise<FormState> {
   await guard();
+  if (form.get("kind") === "confirmations") {
+    if (!mailConfigured()) return { error: "Geen Resend-sleutel gevonden. Zet resend_API (of RESEND_API_KEY) in Vercel (Production) en redeploy." };
+    const orders = (await listOrders()).filter((order) => !order.test && /^\S+@\S+\.\S+$/.test(order.email));
+    if (!orders.length) return { error: "Geen betaalde klantbestellingen met een geldig e-mailadres gevonden." };
+    let sent = 0;
+    const failed: string[] = [];
+    for (const order of orders) {
+      const summary = await orderSummary(order.id);
+      if (!summary) {
+        failed.push(order.id);
+        continue;
+      }
+      try {
+        await sendMail(order.email, customerEmail(order, summary.number, summary.lines));
+        sent += 1;
+      } catch (error) {
+        console.error(`Orderbevestiging opnieuw versturen mislukt voor ${order.id}`, error);
+        failed.push(summary.number);
+      }
+    }
+    if (failed.length) return { error: `${sent} orderbevestigingen verstuurd; mislukt voor ${failed.join(", ")}.` };
+    return { ok: `${sent} orderbevestigingen verstuurd naar alle klanten met een betaalde bestelling.` };
+  }
   const to = String(form.get("to") ?? "").trim();
   if (!/^\S+@\S+\.\S+$/.test(to)) return { error: "Vul een geldig e-mailadres in." };
   if (!mailConfigured()) return { error: "Geen Resend-sleutel gevonden. Zet resend_API (of RESEND_API_KEY) in Vercel (Production) en redeploy." };
