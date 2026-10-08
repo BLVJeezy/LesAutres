@@ -20,7 +20,7 @@ export function TestMail({ from, support, configured }: { from: string; support:
         <form action={action} style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
           <input name="to" type="email" required placeholder="jouw@email.com" className="admin-input" style={{ flex: 1, minWidth: 180, fontSize: 16, padding: "10px 12px", border: "1px solid var(--border)", borderRadius: 8 }} />
           <button className="admin-btn secondary" name="kind" value="one" disabled={pending}>{pending ? "Bezig…" : "Stuur testmail"}</button>
-          <button className="admin-btn" name="kind" value="all" disabled={pending}>{pending ? "Bezig…" : "Stuur alle 3 testmails"}</button>
+          <button className="admin-btn" name="kind" value="all" disabled={pending}>{pending ? "Bezig…" : "Stuur 3 officiële voorbeelden"}</button>
         </form>
         {state.error && <p className="admin-note" style={{ color: "#b42318", marginTop: 8 }}>{state.error}</p>}
         {state.ok && <p className="admin-note" style={{ color: "#067647", marginTop: 8 }}>{state.ok}</p>}
