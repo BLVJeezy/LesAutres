@@ -1,3 +1,5 @@
+import { TestMail } from "./test-mail";
+import { MAIL_FROM, mailConfigured, SUPPORT_EMAIL } from "@/lib/mail";
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money, sizes, totalStock, VAT_RATE } from "@/lib/catalog";
@@ -328,6 +330,7 @@ export default async function Dashboard({
               </dl>
             </div>
           </section>
+          <TestMail from={MAIL_FROM} support={SUPPORT_EMAIL} configured={mailConfigured()} />
           <p className="admin-note">
             Winst = omzet{VAT_RATE ? " − btw" : ""} − kostprijs; terugbetalingen afgetrokken.
           </p>

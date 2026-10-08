@@ -53,7 +53,7 @@ export async function sweepAbandoned(force = false) {
       }),
     );
     try {
-      if (await sendMail(order.email, abandonedEmail(order, lines, d.checkoutUrl ?? null), process.env.ORDER_NOTIFY_EMAIL))
+      if (await sendMail(order.email, abandonedEmail(order, lines, d.checkoutUrl ?? null)))
         sent++;
     } catch (error) {
       console.error("Abandoned cart e-mail failed", error);
