@@ -341,6 +341,16 @@ export const legalPages: Record<string, Page> = {
     ),
     sections: [
       {
+        title: "In het kort",
+        body: (
+          <ol>
+            <li>Meld binnen 14 dagen na ontvangst dat je wilt herroepen: online via <Link href="/herroepen">dit formulier</Link> of per e-mail naar {email()}.</li>
+            <li>Stuur het artikel ongedragen, ongewassen en met labels binnen 14 dagen terug naar het adres hieronder. De retourkosten zijn voor jou.</li>
+            <li>Je krijgt je geld binnen 14 dagen terug op hetzelfde betaalmiddel, zodra we het artikel (of je verzendbewijs) hebben.</li>
+          </ol>
+        ),
+      },
+      {
         title: "Herroepingsrecht",
         body: (
           <p>
