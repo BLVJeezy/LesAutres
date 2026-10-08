@@ -848,19 +848,34 @@
   }
   .admin-side nav {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 0;
+  }
+  .admin-side nav a.nav-shop {
+    display: none;
   }
   .admin-side nav a {
     flex-direction: column;
     gap: 2px;
-    padding: 8px 4px;
-    min-height: 56px;
+    padding: 10px 2px 8px;
+    min-height: 68px;
     justify-content: center;
     border-radius: 0;
-    font-size: 10px;
+    font-size: 11.5px;
+    font-weight: 600;
     text-align: center;
     line-height: 1.15;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
+    user-select: none;
+  }
+  .admin-side nav a svg {
+    width: 24px;
+    height: 24px;
+    pointer-events: none;
+  }
+  .admin-side nav a:active {
+    background: rgba(0, 0, 0, 0.05);
   }
   .admin-side nav a[aria-current="page"] {
     box-shadow: none;
@@ -893,7 +908,7 @@
     background: rgba(255, 255, 255, 0.12);
   }
   .admin-main {
-    padding: 16px 12px calc(88px + env(safe-area-inset-bottom));
+    padding: 16px 12px calc(100px + env(safe-area-inset-bottom));
     gap: 12px;
   }
   .admin-grid-2 {
@@ -1130,3 +1145,16 @@
 .admin-loading div { height: 72px; border-radius: 12px; background: linear-gradient(90deg, #0000000a, #00000014, #0000000a); background-size: 200% 100%; animation: admin-shimmer 1.2s infinite; }
 @keyframes admin-shimmer { to { background-position: -200% 0; } }
 @media (max-width: 800px) { .export-dates input { font-size: 16px; } }
+
+/* Bottom nav must always sit above page content (taps were landing on cards underneath). */
+@media (max-width: 800px) {
+  .admin-body { position: relative; z-index: 0; }
+  .admin-shell > .admin-side { z-index: 1000; }
+}
+@media (max-width: 800px) {
+  .admin-tabs { max-width: 100%; min-width: 0; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .admin-tabs::-webkit-scrollbar { display: none; }
+  .admin-tabs > * { flex: none; }
+  .admin-filterbar, .admin-head { min-width: 0; max-width: 100%; }
+  .admin-main { overflow-x: clip; }
+}

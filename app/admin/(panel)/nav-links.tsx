@@ -24,7 +24,7 @@ export function NavLinks({ openOrders }: { openOrders: number }) {
           </Link>
         );
       })}
-      <a href="/" target="_blank" rel="noopener">
+      <a href="/" target="_blank" rel="noopener" className="nav-shop">
         <ExternalLink size={18} strokeWidth={2} />
         Shop
       </a>
