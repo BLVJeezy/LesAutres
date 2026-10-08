@@ -8,7 +8,7 @@ import { setSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/site";
 import { isCarrier } from "@/lib/tracking";
 import { deleteSubscriber } from "@/lib/subscribers";
-import { customerEmail, MAIL_FROM, mailConfigured, sendMail, shippedEmail, shopEmail, SUPPORT_EMAIL } from "@/lib/mail";
+import { BPOST_TRACK, customerEmail, MAIL_FROM, mailConfigured, sendMail, shippedEmail, shopEmail, SUPPORT_EMAIL } from "@/lib/mail";
 import type { Order } from "@/lib/shop";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
@@ -19,6 +19,8 @@ const validImage = (u: unknown) =>
   typeof u === "string" && (IMAGE_URL.test(u) || Boolean(EMULATOR_PREFIX && u.startsWith(EMULATOR_PREFIX)));
 import {
   createProduct,
+  listOrders,
+  orderSummary,
   setOrderRefunded,
   setOrderTest,
   setOrderShipped,
@@ -165,23 +167,24 @@ export async function testMailAction(_: FormState, form: FormData): Promise<Form
   if (!/^\S+@\S+\.\S+$/.test(to)) return { error: "Vul een geldig e-mailadres in." };
   if (!mailConfigured()) return { error: "Geen Resend-sleutel gevonden. Zet resend_API (of RESEND_API_KEY) in Vercel (Production) en redeploy." };
   if (form.get("kind") === "all") {
-    const now = Math.floor(Date.now() / 1000);
+    const latest = (await listOrders())[0];
+    const summary = latest ? await orderSummary(latest.id) : null;
+    if (!summary) return { error: "Geen betaalde bestelling gevonden om als voorbeeld te gebruiken." };
     const order: Order = {
-      id: "TEST", paymentId: null, created: now, email: to, name: "Jason Balongo", phone: "+32 485 59 45 55",
-      address: "Teststraat 1, 2000 Antwerpen, BE", lines: [["baddies-tee", "M", 2, 4990, 900]],
-      shippingMethod: "bpost", shippingFee: 0, discount: 1985, total: 7995, refunded: 0, fee: 0, cost: 1800,
-      vat: 0, profit: 6195, shippedAt: now, trackingCarrier: "bpost", trackingCode: "323299901234567890",
-      trackingUrl: null, shippedMailAt: null, test: true,
+      ...summary.order,
+      email: to,
+      trackingCarrier: "bpost",
+      trackingCode: summary.order.trackingCode || "323299901234567890",
+      trackingUrl: summary.order.trackingUrl || BPOST_TRACK,
     };
-    const lines = [{ name: "The Baddies Tee", size: "M", qty: 2, price: 4990, image: `${siteUrl()}/images/baddies-tee-front.jpg` }];
     const mails = [
-      shopEmail(order, "#TEST", lines),
-      customerEmail(order, "#TEST", lines),
-      shippedEmail(order, "#TEST", lines),
+      shopEmail(order, summary.number, summary.lines),
+      customerEmail(order, summary.number, summary.lines),
+      shippedEmail(order, summary.number, summary.lines),
     ];
     try {
-      for (const m of mails) await sendMail(to, { ...m, subject: `[TEST] ${m.subject}` });
-      return { ok: `3 testmails verstuurd naar ${to}: nieuwe order, orderbevestiging en trackingcode. Kijk ook in je spam.` };
+      for (const m of mails) await sendMail(to, m);
+      return { ok: `3 officiële voorbeelden van de laatste bestelling (${summary.number}) verstuurd naar ${to}: nieuwe order, orderbevestiging en trackinglink. Kijk ook in je spam.` };
     } catch (e) {
       return { error: `Resend weigerde de mail: ${(e as Error).message}` };
     }
