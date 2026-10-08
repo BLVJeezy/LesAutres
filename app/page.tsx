@@ -78,7 +78,13 @@ export default async function Home() {
           ]).replace(/</g, "\\u003c"),
         }}
       />
-      <Store products={products.map(publicProduct)} live={live} />
+      <Store
+        products={products.map(publicProduct)}
+        live={live}
+        revolutPublicKey={
+          process.env.NEXT_PUBLIC_REVOLUT_PUBLIC_KEY || process.env.Revolut_public || process.env.REVOLUT_PUBLIC_KEY || ""
+        }
+      />
     </>
   );
 }

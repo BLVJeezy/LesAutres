@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const checked = await checkCart(cart, cartId);
     if ("error" in checked) return NextResponse.json({ error: checked.error }, { status: 409 });
     const { products } = checked;
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_SITE_URL || new URL(request.url).origin;
     const description = cart
       .map((c) => `${products.find((p) => p.id === c.productId)!.name} — maat ${c.size} × ${c.quantity}`)
       .join(" · ");

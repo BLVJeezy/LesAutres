@@ -4,7 +4,6 @@ import RevolutCheckout from "@revolut/checkout";
 import type { CartItem } from "@/lib/catalog";
 import type { Lang } from "@/lib/i18n";
 
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_REVOLUT_PUBLIC_KEY ?? "";
 const MODE = process.env.NEXT_PUBLIC_REVOLUT_MODE === "sandbox" ? "sandbox" : "prod";
 
 /** Revolut Pay (fast checkout) plus Apple Pay / Google Pay for the selected tees, without our checkout form. */
@@ -14,13 +13,16 @@ export function ExpressCheckout({
   lang,
   cartId,
   label,
+  publicKey,
 }: {
   items: CartItem[];
   amount: number;
   lang: Lang;
   cartId: string;
   label: string;
+  publicKey: string;
 }) {
+  const PUBLIC_KEY = publicKey;
   const payRef = useRef<HTMLDivElement>(null);
   const walletRef = useRef<HTMLDivElement>(null);
   const orderId = useRef<string | null>(null);
