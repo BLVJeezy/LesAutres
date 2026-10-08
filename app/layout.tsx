@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { indexable, siteUrl } from "@/lib/site";
 const url = siteUrl();
@@ -29,7 +30,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="nl-BE" data-scroll-behavior="smooth">
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }

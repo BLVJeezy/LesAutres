@@ -225,7 +225,7 @@ export const legalPages: Record<string, Page> = {
             <ul>
               <li><b>Revolut</b>: betalingen (voor de betaling zelf is Revolut ook zelf verantwoordelijk).</li>
               <li><b>Google Firebase</b> (Google Cloud, servers in de EU): opslag van bestellingen, producten en inschrijvingen.</li>
-              <li><b>Vercel</b>: hosting van de website.</li>
+              <li><b>Vercel</b>: hosting van de website en anonieme bezoekersstatistieken (Vercel Web Analytics, zonder cookies en zonder IP-adressen op te slaan).</li>
               <li><b>Resend</b>: versturen van bestel- en servicemails.</li>
               <li><b>De vervoerder</b> ({c.carrier}): naam, adres en eventueel telefoonnummer om je pakket te leveren.</li>
             </ul>
@@ -282,8 +282,9 @@ export const legalPages: Record<string, Page> = {
     title: "Cookiebeleid",
     intro: (
       <p>
-        Kort: we volgen je niet. Deze website plaatst geen advertentie- of trackingcookies en gebruikt geen externe
-        analytics. We bewaren alleen wat nodig is om de shop te laten werken.
+        Kort: we volgen je niet. Deze website plaatst geen advertentie- of trackingcookies. Voor anonieme
+        bezoekersstatistieken gebruiken we Vercel Web Analytics, dat geen cookies plaatst en je niet herkent over
+        websites heen. We bewaren alleen wat nodig is om de shop te laten werken.
       </p>
     ),
     sections: [
