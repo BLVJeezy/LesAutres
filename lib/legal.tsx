@@ -11,11 +11,11 @@ const email = () =>
 const Identity = () => (
   <ul>
     <li>Handelsnaam: {c.brand}</li>
-    <li>Onderneming: {name()}</li>
-    <li>Maatschappelijke zetel: {fill(c.address, "adres")}</li>
-    <li>Ondernemingsnummer (KBO): {fill(c.enterpriseNumber, "ondernemingsnummer")}</li>
-    <li>Btw-nummer: {fill(c.vatNumber, "btw-nummer")}</li>
-    <li>E-mail: {email()}</li>
+    <li>Verkoper: {name()}, een vennootschap naar Engels recht</li>
+    <li>Statutaire zetel: {fill(c.address, "adres")}</li>
+    <li>Bedrijfsnummer (Companies House): {fill(c.enterpriseNumber, "bedrijfsnummer")}</li>
+    {c.vatNumber && <li>Btw-nummer: {c.vatNumber}</li>}
+    <li>Klantenservice: {email()} — we antwoorden zo snel mogelijk, op werkdagen</li>
     {c.phone && <li>Telefoon: {c.phone}</li>}
   </ul>
 );
@@ -42,7 +42,7 @@ export const legalPages: Record<string, Page> = {
           <p>
             Alle prijzen zijn in euro en zijn eindprijzen: er komen geen kosten bij. We verzenden naar {c.countries.join(", ")}.
             Verzending is {c.shippingCost}. Je ziet de verzendkosten en het totaal altijd vóór je betaalt. Foto&apos;s geven het product zo getrouw mogelijk weer; kleine verschillen in
-            kleur door schermen zijn mogelijk. Een aanbod geldt zolang de voorraad strekt. Drop 001 is beperkt tot 50 tees; artikelen in je winkelmand worden 10 minuten voor je gereserveerd. Bundels: 2 tees voor € 79,95, vanaf 3 tees € 36,65 per stuk. Een kennelijke
+            kleur door schermen zijn mogelijk. Een aanbod geldt zolang de voorraad strekt. Drop 001 is beperkt tot 30 tees; artikelen in je winkelmand worden 10 minuten voor je gereserveerd. Bundels: 2 tees voor € 79,95, vanaf 3 tees € 36,65 per stuk. Een kennelijke
             vergissing in een prijs of productomschrijving bindt ons niet; in dat geval nemen we contact met je op
             en kun je de bestelling kosteloos annuleren.
           </p>
@@ -64,8 +64,8 @@ export const legalPages: Record<string, Page> = {
         body: (
           <p>
             Je betaalt vooraf en veilig via Revolut (Revolut Pay, Visa, Mastercard, American Express, Apple Pay of
-            Google Pay). De betaling wordt namens {c.brand} geïnd door {c.paymentCollector}; daarom zie je die naam
-            op de betaalpagina en op je rekeningafschrift. Je koopovereenkomst sluit je met {c.brand}. Wij ontvangen
+            Google Pay). De betaling wordt geïnd door {name()}, de uitbater van {c.brand}; daarom zie je die naam
+            op de betaalpagina en op je rekeningafschrift. Je koopovereenkomst sluit je met {name()}. Wij ontvangen
             of bewaren nooit je kaartgegevens. Is de betaling niet gelukt, dan is er geen bestelling.
           </p>
         ),
@@ -184,7 +184,7 @@ export const legalPages: Record<string, Page> = {
             <li>
               <b>Bestellingen</b>: naam, e-mailadres, telefoonnummer (optioneel), verzendadres, bestelde artikelen,
               bedrag en betaalstatus. Nodig om je bestelling te leveren, je te informeren en voor garantie of retour
-              (uitvoering van de overeenkomst). We bewaren ze ook voor onze boekhouding en btw-aangifte (wettelijke
+              (uitvoering van de overeenkomst). We bewaren ze ook voor onze boekhouding (wettelijke
               verplichting). Rond je de betaling niet af, dan sturen we je eenmalig een herinnering per e-mail
               (gerechtvaardigd belang). Wanneer je pakket vertrekt, mailen we je de trackinglink.
             </li>
@@ -224,7 +224,6 @@ export const legalPages: Record<string, Page> = {
             <p>We verkopen je gegevens nooit. We werken alleen met deze partners, die ze voor ons verwerken:</p>
             <ul>
               <li><b>Revolut</b>: betalingen (voor de betaling zelf is Revolut ook zelf verantwoordelijk).</li>
-              <li><b>{c.paymentCollector}</b>: int de betalingen namens {c.brand} via zijn Revolut-account en ziet daarbij je naam, e-mailadres, bedrag en bestelnummer.</li>
               <li><b>Google Firebase</b> (Google Cloud, servers in de EU): opslag van bestellingen, producten en inschrijvingen.</li>
               <li><b>Vercel</b>: hosting van de website.</li>
               <li><b>Resend</b>: versturen van bestel- en servicemails.</li>
@@ -295,6 +294,7 @@ export const legalPages: Record<string, Page> = {
             <li><b>la-cart</b> (lokale opslag, noodzakelijk): je winkelmand, zodat die niet verdwijnt. Blijft tot je bestelt of hem leegmaakt.</li>
             <li><b>la-consent</b> (lokale opslag, noodzakelijk): je keuze in de cookiemelding.</li>
             <li><b>la-cart-id</b> (lokale opslag, noodzakelijk): een willekeurige code voor je winkelmand, zodat je tees 10 minuten voor jou gereserveerd blijven.</li>
+            <li><b>la-lang</b> (lokale opslag en cookie, noodzakelijk): de taal die je koos, zodat de shop in jouw taal blijft.</li>
             <li><b>la_admin</b> (cookie, noodzakelijk): alleen voor beheerders die inloggen op het beheer van de shop; vervalt na 12 uur.</li>
           </ul>
         ),

@@ -10,9 +10,9 @@ export const company = {
   legalForm: "Ltd",
   /** Registered office: street + number, postcode, city, country. */
   address: "",
-  /** Belgian enterprise number (KBO), e.g. "BE 0123.456.789". */
+  /** UK company number (Companies House), e.g. "12345678". */
   enterpriseNumber: "",
-  /** VAT number; usually the same as the enterprise number in Belgium. */
+  /** VAT number; leave empty while not VAT-registered. */
   vatNumber: "",
   /** Customer service address, shown everywhere and used for withdrawals. */
   email: "support@lesautresbe.com",
@@ -31,7 +31,7 @@ export const company = {
 };
 
 export const missingCompanyInfo = () =>
-  (["legalName", "legalForm", "address", "enterpriseNumber", "vatNumber", "email"] as const).filter(
+  (["legalName", "legalForm", "address", "enterpriseNumber", "email"] as const).filter(
     (k) => !company[k],
   );
 
