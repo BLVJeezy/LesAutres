@@ -9,7 +9,7 @@ export const company = {
   /** e.g. "BV", "eenmanszaak", "Ltd". */
   legalForm: "private limited company, Engeland & Wales",
   /** Registered office: street + number, postcode, city, country. */
-  address: "",
+  address: "71-75 Shelton Street, Covent Garden, London WC2H 9JQ, Verenigd Koninkrijk",
   /** UK company number (Companies House), e.g. "12345678". */
   enterpriseNumber: "16876148",
   /** VAT number; leave empty while not VAT-registered. */
@@ -35,5 +35,6 @@ export const missingCompanyInfo = () =>
     (k) => !company[k],
   );
 
-export const returnAddress = () => company.returnAddress || company.address;
+/** Only an explicit return address; the registered office is not used for returns. */
+export const returnAddress = () => company.returnAddress;
 export const fill = (v: string, label: string) => v || `[${label} — nog in te vullen]`;
