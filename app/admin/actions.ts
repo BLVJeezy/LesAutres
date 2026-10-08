@@ -8,6 +8,7 @@ import { setSettings } from "@/lib/settings";
 import { siteUrl } from "@/lib/site";
 import { isCarrier } from "@/lib/tracking";
 import { deleteSubscriber } from "@/lib/subscribers";
+import { MAIL_FROM, mailConfigured, sendMail, SUPPORT_EMAIL } from "@/lib/mail";
 
 const IMAGE_URL = /^(\/[\w\-./]+|https:\/\/[^\s"'<>]+)$/;
 const EMULATOR_PREFIX = process.env.FIREBASE_STORAGE_EMULATOR_HOST
@@ -155,4 +156,21 @@ export async function deleteSubscriberAction(form: FormData) {
   await guard();
   await deleteSubscriber(String(form.get("id") ?? ""));
   revalidatePath("/admin/subscribers");
+}
+
+export async function testMailAction(_: FormState, form: FormData): Promise<FormState> {
+  await guard();
+  const to = String(form.get("to") ?? "").trim();
+  if (!/^\S+@\S+\.\S+$/.test(to)) return { error: "Vul een geldig e-mailadres in." };
+  if (!mailConfigured()) return { error: "Geen Resend-sleutel gevonden. Zet RESEND_API_KEY in Vercel (Production) en redeploy." };
+  try {
+    await sendMail(to, {
+      subject: "Testmail — Les Autres",
+      html: `<p>Dit is een testmail van je shop.</p><p>Afzender: ${MAIL_FROM.replace(/</g, "&lt;")}<br>Antwoorden gaan naar: ${SUPPORT_EMAIL}</p>`,
+      text: `Dit is een testmail van je shop.\nAfzender: ${MAIL_FROM}\nAntwoorden gaan naar: ${SUPPORT_EMAIL}`,
+    });
+    return { ok: `Verstuurd naar ${to} vanaf ${MAIL_FROM}. Kijk ook in je spam.` };
+  } catch (e) {
+    return { error: `Resend weigerde de mail: ${(e as Error).message}` };
+  }
 }

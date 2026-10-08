@@ -1,7 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { company } from "./company";
 import { firestore } from "./firebase";
-import { sendMail } from "./mail";
+import { ORDER_NOTIFY, sendMail } from "./mail";
 
 export type Withdrawal = {
   name: string;
@@ -34,7 +34,7 @@ export async function recordWithdrawal(w: Withdrawal) {
   ];
   const html = (intro: string) =>
     `<div style="font:15px/1.6 Arial,Helvetica,sans-serif;color:#111">${intro}<p>${summary.map(esc).join("<br>")}</p></div>`;
-  const shop = process.env.ORDER_NOTIFY_EMAIL || company.email;
+  const shop = ORDER_NOTIFY.length ? ORDER_NOTIFY : company.email;
   const jobs = [
     sendMail(
       w.email,
@@ -45,7 +45,6 @@ export async function recordWithdrawal(w: Withdrawal) {
         ),
         text: `We hebben je herroeping goed ontvangen.\n\n${summary.join("\n")}`,
       },
-      shop || undefined,
     ),
   ];
   if (shop)

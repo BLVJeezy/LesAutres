@@ -5,7 +5,17 @@ import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
 // Order e-mails via Resend. RESEND_API_BASE points at a local mock in tests; leave unset in production.
-export const mailConfigured = () => Boolean(process.env.RESEND_API_KEY);
+const resendKey = () => process.env.RESEND_API_KEY || process.env.RESEND_KEY || process.env.RESEND_TOKEN;
+export const mailConfigured = () => Boolean(resendKey());
+/** Sender for every shop e-mail; the domain must be verified in Resend. */
+export const MAIL_FROM = process.env.MAIL_FROM || "Les Autres <no-reply@lesautresbe.com>";
+/** Where customers' replies go. */
+export const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || "support@lesautresbe.com";
+/** Who gets "Nieuwe order binnengekomen" for every paid order (comma-separated in ORDER_NOTIFY_EMAIL). */
+export const ORDER_NOTIFY = (process.env.ORDER_NOTIFY_EMAIL || "jason@solynglobal.be,muhammadmasae55@gmail.com")
+  .split(",")
+  .map((e) => e.trim())
+  .filter(Boolean);
 
 export type MailLine = { name: string; size: string; qty: number; price: number; image: string };
 
@@ -129,7 +139,7 @@ export function shopEmail(order: Order, number: string, lines: MailLine[]) {
     `Nieuwe bestelling ${number}: ${money(order.total)}`,
     `
       <tr><td style="font:bold 26px/1 Arial,Helvetica,sans-serif;color:#efeee8;text-transform:uppercase">
-        Nieuwe bestelling <span style="color:#d595a4">${esc(number)}</span>
+        Nieuwe order binnengekomen <span style="color:#d595a4">${esc(number)}</span>
       </td></tr>
       <tr><td style="padding-top:20px"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">
         ${row("KLANT", esc(order.name))}
@@ -146,13 +156,13 @@ export function shopEmail(order: Order, number: string, lines: MailLine[]) {
       </td></tr>`,
   );
   const text = [
-    `Nieuwe bestelling ${number}: ${money(order.total)}`,
+    `Nieuwe order binnengekomen ${number}: ${money(order.total)}`,
     `Klant: ${order.name} <${order.email}>${order.phone ? `, ${order.phone}` : ""}`,
     `Adres: ${order.address}`,
     ...lines.map((l) => `- ${l.name}, maat ${l.size} × ${l.qty}`),
     `${siteUrl()}/admin/orders/${order.id}`,
   ].join("\n");
-  return { subject: `Nieuwe bestelling ${number} — ${money(order.total)} — ${order.name}`, html, text };
+  return { subject: `Nieuwe order binnengekomen ${number} — ${money(order.total)} — ${order.name}`, html, text };
 }
 
 export function shippedEmail(order: Order, number: string, lines: MailLine[]) {
@@ -224,19 +234,19 @@ export function abandonedEmail(order: Order, lines: MailLine[], checkoutUrl: str
   return { subject: "Je tees wachten nog op je — Les Autres", html, text };
 }
 
-export async function sendMail(to: string, mail: { subject: string; html: string; text: string }, replyTo?: string) {
-  const key = process.env.RESEND_API_KEY;
+export async function sendMail(to: string | string[], mail: { subject: string; html: string; text: string }, replyTo?: string) {
+  const key = resendKey();
   if (!key) return false;
   const res = await fetch(`${process.env.RESEND_API_BASE ?? "https://api.resend.com"}/emails`, {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      from: process.env.MAIL_FROM ?? "Les Autres <onboarding@resend.dev>",
-      to: [to],
+      from: MAIL_FROM,
+      to: Array.isArray(to) ? to : [to],
       subject: mail.subject,
       html: mail.html,
       text: mail.text,
-      ...(replyTo && { reply_to: replyTo }),
+      reply_to: replyTo || SUPPORT_EMAIL,
     }),
     signal: AbortSignal.timeout(10_000),
   });

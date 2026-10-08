@@ -2,7 +2,7 @@ import { cache } from "react";
 import { randomBytes } from "node:crypto";
 import { UNLIMITED_STOCK } from "./bundles";
 import { shippingFee, shippingLabel, type ShippingId } from "./shipping";
-import { customerEmail, mailConfigured, sendMail, shippedEmail, shopEmail, type MailLine } from "./mail";
+import { customerEmail, mailConfigured, sendMail, shippedEmail, shopEmail, ORDER_NOTIFY, type MailLine } from "./mail";
 import { trackingUrl, type CarrierId } from "./tracking";
 import { createRevolutOrder, getRevolutOrder, type NewOrder, type RevolutAddress, type RevolutOrder } from "./revolut";
 import { firestore } from "./firebase";
@@ -402,9 +402,9 @@ async function sendOrderEmails(id: string) {
   if (!mailConfigured()) return;
   const s = await orderSummary(id);
   if (!s) return;
-  const shop = process.env.ORDER_NOTIFY_EMAIL;
-  const jobs = [sendMail(s.order.email, customerEmail(s.order, s.number, s.lines), shop)];
-  if (shop) jobs.push(sendMail(shop, shopEmail(s.order, s.number, s.lines), s.order.email));
+  const shop = ORDER_NOTIFY;
+  const jobs = [sendMail(s.order.email, customerEmail(s.order, s.number, s.lines))];
+  if (shop.length) jobs.push(sendMail(shop, shopEmail(s.order, s.number, s.lines), s.order.email));
   const results = await Promise.allSettled(jobs);
   for (const r of results) if (r.status === "rejected") console.error("Sending order e-mail failed", r.reason);
 }
@@ -454,7 +454,7 @@ export async function shipOrder(orderId: string, carrier: CarrierId, code: strin
     const s = await orderSummary(orderId);
     if (s) {
       try {
-        mailed = await sendMail(s.order.email, shippedEmail(s.order, s.number, s.lines), process.env.ORDER_NOTIFY_EMAIL);
+        mailed = await sendMail(s.order.email, shippedEmail(s.order, s.number, s.lines));
         if (mailed) await ref.update({ shippedMailAt: Date.now() });
       } catch (error) {
         console.error("Shipping e-mail failed", error);

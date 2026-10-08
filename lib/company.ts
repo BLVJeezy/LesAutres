@@ -15,7 +15,7 @@ export const company = {
   /** VAT number; usually the same as the enterprise number in Belgium. */
   vatNumber: "",
   /** Customer service address, shown everywhere and used for withdrawals. */
-  email: "",
+  email: "support@lesautresbe.com",
   phone: "",
   /** Where returns must be sent; defaults to the registered office. */
   returnAddress: "",
