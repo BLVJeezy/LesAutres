@@ -617,9 +617,11 @@ function MoreProduct({
 export default function Store({
   products,
   live,
+  revolutPublicKey = "",
 }: {
   products: ShopProduct[];
   live: boolean;
+  revolutPublicKey?: string;
 }) {
   const featured = products[0];
   const price = featured.price;
@@ -951,6 +953,7 @@ export default function Store({
                 onAdd={addBundle}
                 express={(picked, amount) => (
                   <ExpressCheckout
+                    publicKey={revolutPublicKey}
                     items={sizes
                       .filter((s) => picked.includes(s))
                       .map((s) => ({ productId: featured.id, size: s, quantity: picked.filter((p) => p === s).length }))}

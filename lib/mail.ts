@@ -5,7 +5,7 @@ import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
 // Order e-mails via Resend. RESEND_API_BASE points at a local mock in tests; leave unset in production.
-const resendKey = () => process.env.RESEND_API_KEY || process.env.RESEND_KEY || process.env.RESEND_TOKEN;
+const resendKey = () => process.env.RESEND_API_KEY || process.env.resend_API || process.env.RESEND_API || process.env.RESEND_KEY || process.env.RESEND_TOKEN;
 export const mailConfigured = () => Boolean(resendKey());
 /** Sender for every shop e-mail; the domain must be verified in Resend. */
 export const MAIL_FROM = process.env.MAIL_FROM || "Les Autres <no-reply@lesautresbe.com>";
@@ -165,6 +165,8 @@ export function shopEmail(order: Order, number: string, lines: MailLine[]) {
   return { subject: `Nieuwe order binnengekomen ${number} — ${money(order.total)} — ${order.name}`, html, text };
 }
 
+export const BPOST_TRACK = "https://track.bpost.cloud/btr/web/#/home?lang=nl";
+
 export function shippedEmail(order: Order, number: string, lines: MailLine[]) {
   const first = order.name.split(" ")[0] || "jij";
   const carrier = carrierLabel(order.trackingCarrier);
@@ -181,8 +183,16 @@ export function shippedEmail(order: Order, number: string, lines: MailLine[]) {
       </td></tr>
       <tr><td style="padding-top:18px;font:15px/1.55 Arial,Helvetica,sans-serif;color:#efeee8">
         Je bestelling <b>${esc(number)}</b> heeft ons magazijn verlaten${carrier ? ` en wordt geleverd door <b>${esc(carrier)}</b>` : ""}.
-        ${order.trackingCode && !order.trackingUrl ? `Trackingcode: <b>${esc(order.trackingCode)}</b>.` : ""}
       </td></tr>
+      ${
+        order.trackingCode && !/^https?:/.test(order.trackingCode)
+          ? `<tr><td style="padding-top:20px;font:15px/1.55 Arial,Helvetica,sans-serif;color:#efeee8">
+        Hier is jouw trackingcode:<br>
+        <span style="display:inline-block;margin-top:8px;padding:10px 14px;border:1px solid #d595a4;font:bold 18px monospace;letter-spacing:1px;color:#efeee8">${esc(order.trackingCode)}</span>
+        ${order.trackingCarrier === "bpost" || !order.trackingCarrier ? `<br><span style="font-size:13px;color:#989a92">Vul je code in op <a href="${BPOST_TRACK}" style="color:#d595a4">track.bpost.cloud</a> om je pakket te volgen.</span>` : ""}
+      </td></tr>`
+          : ""
+      }
       ${button}
       <tr><td style="padding-top:28px;font:10px monospace;letter-spacing:1px;color:#989a92">IN DIT PAKKET</td></tr>
       <tr><td><table role="presentation" width="100%" cellpadding="0" cellspacing="0">${linesTable(lines)}</table></td></tr>
@@ -196,7 +206,9 @@ export function shippedEmail(order: Order, number: string, lines: MailLine[]) {
   const text = [
     `Hey ${first}, je pakket is onderweg.`,
     `Bestelling ${number}${carrier ? ` · ${carrier}` : ""}`,
-    order.trackingUrl ? `Volg je pakket: ${order.trackingUrl}` : order.trackingCode ? `Trackingcode: ${order.trackingCode}` : "",
+    order.trackingCode && !/^https?:/.test(order.trackingCode) ? `Hier is jouw trackingcode: ${order.trackingCode}` : "",
+    order.trackingCarrier === "bpost" ? `Volg je pakket op ${BPOST_TRACK}` : "",
+    order.trackingUrl ? `Volg je pakket: ${order.trackingUrl}` : "",
   ]
     .filter(Boolean)
     .join("\n");
