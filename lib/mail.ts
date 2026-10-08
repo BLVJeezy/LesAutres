@@ -1,7 +1,6 @@
 import { money } from "./catalog";
 import { shippingLabel } from "./shipping";
 import { carrierLabel } from "./tracking";
-import { siteUrl } from "./site";
 import type { Order } from "./shop";
 
 // Order e-mails via Resend. RESEND_API_BASE points at a local mock in tests; leave unset in production.
@@ -19,12 +18,20 @@ export const ORDER_NOTIFY = (process.env.ORDER_NOTIFY_EMAIL || "jason@solyngloba
 
 export type MailLine = { name: string; size: string; qty: number; price: number; image: string };
 
-export { siteUrl };
+/** Email assets must use the public shop, not the legacy SEO/deployment origin. */
+export const siteUrl = () => "https://www.lesautresbe.com";
 
 const esc = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-const absolute = (src: string) => (src.startsWith("/") ? `${siteUrl()}${src}` : src);
+const absolute = (src: string) => {
+  const url = new URL(src, `${siteUrl()}/`);
+  if (["lesautres.be", "www.lesautres.be", "lesautresbe.com"].includes(url.hostname)) {
+    url.protocol = "https:";
+    url.host = "www.lesautresbe.com";
+  }
+  return url.href;
+};
 
 function linesTable(lines: MailLine[]) {
   return lines
