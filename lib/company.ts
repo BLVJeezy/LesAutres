@@ -5,13 +5,13 @@
 export const company = {
   brand: "Les Autres",
   /** Official name of the selling company, e.g. "Les Autres BV" or your own name for a sole trader. */
-  legalName: "Solyn Global",
+  legalName: "SOLYN GLOBAL LTD",
   /** e.g. "BV", "eenmanszaak", "Ltd". */
-  legalForm: "Ltd",
+  legalForm: "private limited company, Engeland & Wales",
   /** Registered office: street + number, postcode, city, country. */
   address: "",
   /** UK company number (Companies House), e.g. "12345678". */
-  enterpriseNumber: "",
+  enterpriseNumber: "16876148",
   /** VAT number; leave empty while not VAT-registered. */
   vatNumber: "",
   /** Customer service address, shown everywhere and used for withdrawals. */
@@ -20,7 +20,7 @@ export const company = {
   /** Where returns must be sent; defaults to the registered office. */
   returnAddress: "",
   /** Company that collects card payments on behalf of the seller (name shown on the Revolut payment page). */
-  paymentCollector: "Solyn Global Ltd (Londen, Verenigd Koninkrijk)",
+  paymentCollector: "SOLYN GLOBAL LTD",
   /** Shop policy. */
   countries: ["België", "Nederland", "Luxemburg", "Frankrijk", "Duitsland", "Spanje"],
   shippingCost: "altijd gratis met bpost, GLS of UPS; persoonlijke levering door Issa zelf kost € 10.000",
