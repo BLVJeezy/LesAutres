@@ -87,7 +87,7 @@ function totals(order: Order) {
             <td style="text-align:right;font:13px monospace;color:#efeee8;padding-bottom:8px">${order.shippingFee ? money(order.shippingFee) : "Gratis"}</td>
           </tr>
           <tr>
-            <td style="font:12px monospace;color:#989a92">TOTAAL <span style="font-size:10px">(INCL. BTW)</span></td>
+            <td style="font:12px monospace;color:#989a92">TOTAAL</td>
             <td style="text-align:right;font:bold 16px monospace;color:#efeee8">${money(order.total)}</td>
           </tr>
         </table>
