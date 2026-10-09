@@ -498,8 +498,32 @@ export const listOrders = cache(async (sinceUnix?: number): Promise<Order[]> => 
     .map(fromDoc);
 });
 
-/** Shopify-style order numbers: #1001 for the first paid order, counting up by date. */
-export function orderNumbers(orders: Order[]): Map<string, number> {
+/** Readable order code from the order id: 6 letters and digits without look-alikes (no 0/O, 1/I/L). */
+const CODE_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+const fnv = (id: string, seed: number) => {
+  let h = seed >>> 0;
+  for (const ch of id) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0;
+  return h >>> 0;
+};
+export function orderCode(id: string) {
+  let code = "";
+  for (const seed of [2166136261, 0x811c9dc5 ^ 0x5bd1e995]) {
+    let h = fnv(id, seed);
+    for (let i = 0; i < 3; i++) {
+      code += CODE_CHARS[h % CODE_CHARS.length];
+      h = Math.floor(h / CODE_CHARS.length);
+    }
+  }
+  return code;
+}
+
+/** Order codes (e.g. 7K3QX9), shown as #7K3QX9 everywhere. */
+export function orderNumbers(orders: Order[]): Map<string, string> {
+  return new Map(orders.map((o) => [o.id, orderCode(o.id)]));
+}
+
+/** Old sequential numbers (#1001 …), kept for looking up orders mentioned in older e-mails. */
+export function legacyOrderNumbers(orders: Order[]): Map<string, number> {
   const sorted = [...orders].sort((a, b) => a.created - b.created);
   return new Map(sorted.map((o, i) => [o.id, 1001 + i]));
 }

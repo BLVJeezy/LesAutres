@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 
 export type PickOrder = {
   id: string;
-  number: number;
+  number: string;
   created: number;
   shippedAt: number | null;
   name: string;
