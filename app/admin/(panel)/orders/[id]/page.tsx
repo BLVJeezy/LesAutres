@@ -39,7 +39,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           <span className={`badge ${tone}`}>{label}</span>
           {order.test && <span className="badge attention">Test · niet meegeteld</span>}
         </div>
-        <span className="admin-note">{date}{legacy ? ` · voorheen #${legacy}` : ""}</span>
+        <span className="admin-note">{date}{legacy && String(legacy) !== number ? ` · voorheen #${legacy}` : ""}</span>
       </div>
 
       <div className="admin-grid-2">
