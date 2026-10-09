@@ -55,7 +55,7 @@ export function WithdrawForm() {
         <input name="email" type="email" required maxLength={254} autoComplete="email" />
       </label>
       <label className="checkout-field">
-        <span>Bestelnummer (bv. #1001)</span>
+        <span>Bestelnummer (bv. #7K3QX9)</span>
         <input name="orderNumber" required maxLength={40} />
       </label>
       <label className="checkout-field">

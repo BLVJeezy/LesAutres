@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
 import { shippingLabel } from "@/lib/shipping";
-import { adminProducts, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
+import { adminProducts, legacyOrderNumbers, listOrders, orderNumbers, orderStatus } from "@/lib/shop";
 import { toggleRefundedAction, toggleShippedAction, toggleTestAction } from "../../../actions";
 import { STATUS_BADGE } from "../status";
 import { ShipForm } from "./ship-form";
@@ -17,6 +17,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
   const order = orders.find((o) => o.id === id);
   if (!order) notFound();
   const number = orderNumbers(orders).get(order.id);
+  const legacy = legacyOrderNumbers(orders).get(order.id);
   const status = orderStatus(order);
   const [tone, label] = STATUS_BADGE[status];
   const product = (pid: string) => products.find((p) => p.id === pid);
@@ -38,7 +39,7 @@ export default async function OrderDetail({ params }: { params: Promise<{ id: st
           <span className={`badge ${tone}`}>{label}</span>
           {order.test && <span className="badge attention">Test · niet meegeteld</span>}
         </div>
-        <span className="admin-note">{date}</span>
+        <span className="admin-note">{date}{legacy ? ` · voorheen #${legacy}` : ""}</span>
       </div>
 
       <div className="admin-grid-2">

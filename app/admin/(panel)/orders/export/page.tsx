@@ -12,7 +12,7 @@ export default async function ExportOrders({ searchParams }: { searchParams: Pro
     .filter((o) => !o.test && o.refunded < o.total)
     .map((o) => ({
       id: o.id,
-      number: numbers.get(o.id) ?? 0,
+      number: numbers.get(o.id) ?? "",
       created: o.created,
       shippedAt: o.shippedAt,
       name: o.name || o.email,
