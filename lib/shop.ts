@@ -517,9 +517,15 @@ export function orderCode(id: string) {
   return code;
 }
 
-/** Order codes (e.g. 7K3QX9), shown as #7K3QX9 everywhere. */
+/** Orders placed from this moment (unix seconds) get a letter/digit code; older ones keep #1001 … */
+export const ORDER_CODES_FROM = 1791564636;
+
+/** Display number per order: code (e.g. X2AU87) for new orders, the old sequential number for earlier ones. */
 export function orderNumbers(orders: Order[]): Map<string, string> {
-  return new Map(orders.map((o) => [o.id, orderCode(o.id)]));
+  const legacy = legacyOrderNumbers(orders);
+  return new Map(
+    orders.map((o) => [o.id, o.created >= ORDER_CODES_FROM ? orderCode(o.id) : String(legacy.get(o.id) ?? "")]),
+  );
 }
 
 /** Old sequential numbers (#1001 …), kept for looking up orders mentioned in older e-mails. */
