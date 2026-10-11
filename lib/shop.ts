@@ -225,6 +225,7 @@ export type OrderDoc = Omit<Order, "lines" | "test"> & {
   status: "pending" | "paid";
   checkoutUrl?: string | null;
   reminderSentAt?: number | null;
+  revolutError?: string;
   lines: { productId: string; size: Size; qty: number; price: number; cost: number }[];
   updatedAt: number;
 };
@@ -309,14 +310,26 @@ export async function startCheckout(c: Checkout): Promise<{ id: string; url: str
     updatedAt: Date.now(),
   };
   await db.collection(ORDERS).doc(id).set(doc);
-  const order = await createRevolutOrder({
+  const base = {
     amount: total,
     reference: id,
     description: `${c.description} · Verzending: ${shippingLabel(c.shippingMethod)}`,
     redirectUrl: `${c.origin}/bedankt?order=${id}`,
-    customer: c.customer,
-    shipping: c.shipping,
-  });
+  };
+  let order;
+  try {
+    order = await createRevolutOrder({ ...base, customer: c.customer, shipping: c.shipping });
+  } catch (error) {
+    // Revolut can reject optional details (phone, address format). Keep them in our order and retry without them,
+    // so the customer can always pay; the address stays in the admin.
+    const message = (error as Error).message.slice(0, 500);
+    console.error("Revolut order with customer details failed, retrying without", message);
+    await db.collection(ORDERS).doc(id).update({ revolutError: message, updatedAt: Date.now() });
+    order = await createRevolutOrder({
+      ...base,
+      customer: c.customer ? { email: c.customer.email, full_name: c.customer.full_name } : undefined,
+    }).catch(() => createRevolutOrder(base));
+  }
   await db
     .collection(ORDERS)
     .doc(id)
@@ -546,7 +559,7 @@ export async function listAbandonedCheckouts(limit = 200) {
   return snap.docs
     .map((doc) => {
       const d = { ...(doc.data() as OrderDoc), id: doc.id };
-      return { ...fromDoc(d), reminderSentAt: d.reminderSentAt ?? null };
+      return { ...fromDoc(d), reminderSentAt: d.reminderSentAt ?? null, revolutError: d.revolutError ?? "" };
     })
     .sort((a, b) => b.created - a.created)
     .filter((o) => !o.test)
