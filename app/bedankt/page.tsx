@@ -5,6 +5,7 @@ import { money } from "@/lib/catalog";
 import { shippingLabel } from "@/lib/shipping";
 import { confirmOrder, orderIdForPayment, orderSummary } from "@/lib/shop";
 import { ClearCart } from "./clear-cart";
+import { AddressForm } from "./address-form";
 
 export const metadata = { title: "Bedankt — Les Autres", robots: "noindex" };
 
@@ -40,6 +41,23 @@ export default async function Bedankt({
       {summary ? (
         <>
           <ClearCart />
+          {!summary.order.address && <AddressForm
+              orderId={summary.order.id}
+              t={{
+                addressTitle: t.addressTitle,
+                addressLead: t.addressLead,
+                name: t.name,
+                street: t.street,
+                postcode: t.postcode,
+                city: t.city,
+                country: t.country,
+                phone: t.phone,
+                save: t.save,
+                saved: t.saved,
+                error: t.error,
+              }}
+              countries={d.countries}
+            />}
           <p className="micro">{t.confirmed(String(summary.number))}</p>
           <h1>
             {t.title[0]}
