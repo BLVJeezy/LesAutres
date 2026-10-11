@@ -43,7 +43,6 @@ import { EMPTY_CUSTOMER, onSubscribe, onCheckout, trackEvent, type Customer } fr
 import { ShirtFallback } from "./shirt-fallback";
 import { Lookbook } from "./lookbook";
 import { AnthemVideo } from "./anthem-video";
-import { ExpressCheckout } from "./express";
 const I18n = createContext<Dict>(DICTS.nl);
 const useT = () => useContext(I18n);
 function Wordmark() {
@@ -308,7 +307,6 @@ function BundlePicker({
   soldOut,
   isSoldOut,
   onAdd,
-  express,
 }: {
   unit: number;
   image: string;
@@ -317,7 +315,6 @@ function BundlePicker({
   soldOut: boolean;
   isSoldOut: (s: Size) => boolean;
   onAdd: (sizes: Size[]) => void;
-  express?: (sizes: Size[], amount: number) => ReactNode;
 }) {
   const [qty, setQty] = useState<number>(1);
   const [picked, setPicked] = useState<Size[]>([]);
@@ -415,7 +412,6 @@ function BundlePicker({
         </span>
         <ArrowUpRight size={22} />
       </button>
-      {!soldOut && qty <= maxQty && express?.(Array.from({ length: qty }, (_, i) => sizeAt(i)), price)}
     </div>
   );
 }
@@ -617,11 +613,9 @@ function MoreProduct({
 export default function Store({
   products,
   live,
-  revolutPublicKey = "",
 }: {
   products: ShopProduct[];
   live: boolean;
-  revolutPublicKey?: string;
 }) {
   const featured = products[0];
   const price = featured.price;
@@ -951,29 +945,6 @@ export default function Store({
                 soldOut={dropSoldOut}
                 isSoldOut={soldOut}
                 onAdd={addBundle}
-                express={(picked, amount) => (
-                  <ExpressCheckout
-                    publicKey={revolutPublicKey}
-                    items={sizes
-                      .filter((s) => picked.includes(s))
-                      .map((s) => ({ productId: featured.id, size: s, quantity: picked.filter((p) => p === s).length }))}
-                    amount={amount}
-                    lang={lang}
-                    cartId={cartId}
-                    label={t.expressOr}
-                    labels={{
-                      name: t.name,
-                      email: t.emailShort,
-                      phone: t.phone,
-                      street: t.street,
-                      postcode: t.postcode,
-                      city: t.city,
-                      country: t.country,
-                      countries: t.countries,
-                      needDetails: t.expressNeedDetails,
-                    }}
-                  />
-                )}
               />
             ) : (
               <>
