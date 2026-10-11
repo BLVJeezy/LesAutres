@@ -2774,3 +2774,10 @@ footer {
 .thanks-address label { display: grid; gap: 4px; font: 600 10px monospace; letter-spacing: 1px; text-transform: uppercase; }
 .thanks-address input, .thanks-address select { font: 16px inherit; font-family: inherit; padding: 12px; border: 1px solid #0000002a; border-radius: 6px; background: #fff; text-transform: none; letter-spacing: 0; }
 .thanks-row { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+.express-details { display: grid; gap: 8px; }
+.express-details label { display: grid; gap: 4px; }
+.express-details label > span { font: 600 9px monospace; letter-spacing: 1.2px; text-transform: uppercase; color: var(--muted); }
+.express-details input, .express-details select { font: 16px/1.2 inherit; font-family: inherit; padding: 11px 12px; border: 1px solid #0000002a; border-radius: 6px; background: #fff; }
+.express-row { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; }
+.express-hint { margin: 0; font-size: 12px; color: var(--muted); }
+.express-buttons.locked { opacity: 0.35; pointer-events: none; filter: grayscale(1); }
