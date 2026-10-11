@@ -4,8 +4,8 @@ import RevolutCheckout from "@revolut/checkout";
 import type { CartItem } from "@/lib/catalog";
 import type { Lang } from "@/lib/i18n";
 
-/** Off until express checkout is tested with a real payment; the Revolut payment page already offers Apple Pay, Google Pay and Revolut Pay. */
-const EXPRESS_ENABLED = false;
+/** Express checkout (Revolut Pay, Apple Pay, Google Pay) on the product page. */
+const EXPRESS_ENABLED = true;
 const MODE = process.env.NEXT_PUBLIC_REVOLUT_MODE === "sandbox" ? "sandbox" : "prod";
 
 /** Revolut Pay (fast checkout) plus Apple Pay / Google Pay for the selected tees, without our checkout form. */
