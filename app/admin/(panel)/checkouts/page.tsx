@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/admin-auth";
 import { money } from "@/lib/catalog";
 import { listAbandonedCheckouts, listProducts } from "@/lib/shop";
+import { getRevolutOrder, revolutConfigured } from "@/lib/revolut";
 
 const fmt = (s: number) =>
   new Date(s * 1000).toLocaleString("nl-BE", {
@@ -17,6 +18,32 @@ export default async function Checkouts() {
     listAbandonedCheckouts().catch(() => []),
     listProducts().catch(() => []),
   ]);
+  // Ask Revolut what happened with the most recent unpaid checkouts (state + decline reason).
+  const STATE: Record<string, string> = {
+    pending: "Betaalpagina niet afgerond",
+    processing: "Bezig",
+    authorised: "Geautoriseerd",
+    completed: "Betaald",
+    cancelled: "Geannuleerd",
+    failed: "Mislukt",
+    declined: "Geweigerd",
+  };
+  const status = new Map<string, string>();
+  if (revolutConfigured())
+    await Promise.all(
+      checkouts.slice(0, 40).filter((c) => c.paymentId).map(async (c) => {
+        const r = await getRevolutOrder(c.paymentId!).catch(() => null);
+        if (!r) return;
+        const tries = r.payments ?? [];
+        const last = tries[tries.length - 1];
+        const reason = last?.decline_reason ? ` — ${last.decline_reason.replace(/_/g, " ")}` : "";
+        const method = last?.payment_method?.type ? ` (${last.payment_method.type.replace(/_/g, " ").toLowerCase()})` : "";
+        status.set(
+          c.id,
+          `${STATE[last?.state ?? r.state] ?? last?.state ?? r.state}${reason}${method}${tries.length > 1 ? ` · ${tries.length} pogingen` : tries.length === 0 ? " · geen poging" : ""}`,
+        );
+      }),
+    );
   const name = (id: string) => products.find((p) => p.id === id)?.name ?? id;
   const withEmail = checkouts.filter((c) => c.email);
   const value = checkouts.reduce((n, c) => n + c.total, 0);
@@ -42,6 +69,7 @@ export default async function Checkouts() {
                   <th className="admin-hide-mobile">Adres</th>
                   <th>Artikelen</th>
                   <th className="num">Totaal</th>
+                  <th>Revolut</th>
                   <th className="admin-hide-mobile">Herinnering</th>
                 </tr>
               </thead>
@@ -73,6 +101,7 @@ export default async function Checkouts() {
                       ))}
                     </td>
                     <td className="num">{money(c.total)}</td>
+                    <td>{status.get(c.id) ?? "—"}</td>
                     <td className="admin-hide-mobile">
                       {c.reminderSentAt ? fmt(Math.floor(c.reminderSentAt / 1000)) : "—"}
                     </td>
