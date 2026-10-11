@@ -8,7 +8,30 @@ import type { Lang } from "@/lib/i18n";
 const EXPRESS_ENABLED = true;
 const MODE = process.env.NEXT_PUBLIC_REVOLUT_MODE === "sandbox" ? "sandbox" : "prod";
 
-/** Revolut Pay (fast checkout) plus Apple Pay / Google Pay for the selected tees, without our checkout form. */
+export type ExpressLabels = {
+  name: string;
+  email: string;
+  phone: string;
+  street: string;
+  postcode: string;
+  city: string;
+  country: string;
+  countries: Record<string, string>;
+  needDetails: string;
+};
+type Details = { name: string; email: string; phone: string; street: string; postcode: string; city: string; country: string };
+const EMPTY: Details = { name: "", email: "", phone: "", street: "", postcode: "", city: "", country: "BE" };
+const COUNTRIES = ["BE", "NL", "LU", "FR", "DE", "ES"];
+/** Same minimum the server enforces; the server also normalises and re-checks the phone number. */
+const complete = (d: Details) =>
+  /^\S+@\S+\.\S+$/.test(d.email.trim()) &&
+  d.name.trim().length >= 2 &&
+  d.street.trim().length >= 3 &&
+  d.postcode.trim().length >= 3 &&
+  d.city.trim().length >= 2 &&
+  d.phone.replace(/\D/g, "").length >= 8;
+
+/** Revolut Pay plus Apple Pay / Google Pay for the selected tees. Contact and shipping details are always asked first. */
 export function ExpressCheckout({
   items,
   amount,
@@ -16,6 +39,7 @@ export function ExpressCheckout({
   cartId,
   label,
   publicKey,
+  labels,
 }: {
   items: CartItem[];
   amount: number;
@@ -23,7 +47,12 @@ export function ExpressCheckout({
   cartId: string;
   label: string;
   publicKey: string;
+  labels: ExpressLabels;
 }) {
+  const [details, setDetails] = useState<Details>(EMPTY);
+  const detailsRef = useRef<Details>(EMPTY);
+  detailsRef.current = details;
+  const ok = complete(details);
   const PUBLIC_KEY = publicKey;
   const payRef = useRef<HTMLDivElement>(null);
   const walletRef = useRef<HTMLDivElement>(null);
@@ -38,10 +67,14 @@ export function ExpressCheckout({
     const cleanup: (() => void)[] = [];
     const createOrder = async () => {
       setError("");
+      if (!complete(detailsRef.current)) {
+        setError(labels.needDetails);
+        throw new Error(labels.needDetails);
+      }
       const r = await fetch("/api/express", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cart: JSON.parse(key), cartId }),
+        body: JSON.stringify({ cart: JSON.parse(key), cartId, customer: detailsRef.current }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.publicId) {
@@ -64,7 +97,7 @@ export function ExpressCheckout({
         payments.revolutPay.mount(payRef.current, {
           currency: "EUR",
           totalAmount: amount,
-          requestShipping: true,
+          requestShipping: false,
           createOrder,
           redirectUrls: urls,
           mobileRedirectUrls: urls,
@@ -77,9 +110,7 @@ export function ExpressCheckout({
         const wallet = payments.paymentRequest(walletRef.current!, {
           amount,
           currency: "EUR",
-          requestShipping: true,
-          requestPayerEmail: true,
-          requestPayerName: true,
+          requestShipping: false,
           createOrder,
           onSuccess: done,
           onError: (e) => setError(e?.message ?? "Betaling mislukt."),
@@ -100,8 +131,47 @@ export function ExpressCheckout({
   return (
     <div className={`express ${ready ? "ready" : ""}`}>
       <span className="express-or">{label}</span>
-      <div ref={walletRef} className="express-wallet" />
-      <div ref={payRef} className="express-revolut" />
+      <div className="express-details">
+        <label>
+          <span>{labels.name}</span>
+          <input value={details.name} onChange={(e) => setDetails({ ...details, name: e.target.value })} autoComplete="name" maxLength={120} />
+        </label>
+        <label>
+          <span>{labels.email}</span>
+          <input value={details.email} onChange={(e) => setDetails({ ...details, email: e.target.value })} type="email" autoComplete="email" maxLength={254} />
+        </label>
+        <label>
+          <span>{labels.phone}</span>
+          <input value={details.phone} onChange={(e) => setDetails({ ...details, phone: e.target.value })} type="tel" autoComplete="tel" maxLength={30} />
+        </label>
+        <label>
+          <span>{labels.street}</span>
+          <input value={details.street} onChange={(e) => setDetails({ ...details, street: e.target.value })} autoComplete="address-line1" maxLength={200} />
+        </label>
+        <div className="express-row">
+        <label>
+          <span>{labels.postcode}</span>
+          <input value={details.postcode} onChange={(e) => setDetails({ ...details, postcode: e.target.value })} autoComplete="postal-code" maxLength={12} />
+        </label>
+        <label>
+          <span>{labels.city}</span>
+          <input value={details.city} onChange={(e) => setDetails({ ...details, city: e.target.value })} autoComplete="address-level2" maxLength={80} />
+        </label>
+        </div>
+        <label>
+          <span>{labels.country}</span>
+          <select value={details.country} onChange={(e) => setDetails({ ...details, country: e.target.value })} autoComplete="country">
+            {COUNTRIES.map((c) => (
+              <option key={c} value={c}>{labels.countries[c] ?? c}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      {!ok && <p className="express-hint">{labels.needDetails}</p>}
+      <div className={`express-buttons ${ok ? "" : "locked"}`} aria-disabled={!ok}>
+        <div ref={walletRef} className="express-wallet" />
+        <div ref={payRef} className="express-revolut" />
+      </div>
       {error && <p className="form-status">{error}</p>}
     </div>
   );

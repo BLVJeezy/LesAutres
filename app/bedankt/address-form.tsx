@@ -39,7 +39,7 @@ export function AddressForm({ orderId, t, countries }: { orderId: string; t: Lab
           {COUNTRIES.map((c) => <option key={c} value={c}>{countries[c] ?? c}</option>)}
         </select>
       </label>
-      <label>{t.phone}<input name="phone" type="tel" autoComplete="tel" maxLength={30} /></label>
+      <label>{t.phone}<input name="phone" type="tel" required autoComplete="tel" maxLength={30} /></label>
       <button className="buy" disabled={state === "busy"}>{state === "busy" ? "…" : t.save}</button>
       {state === "error" && <p className="form-status">{t.error}</p>}
     </form>

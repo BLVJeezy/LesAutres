@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   const city = text(b?.city, 80);
   const country = text(b?.country, 2).toUpperCase();
   const phone = text(b?.phone, 30);
-  if (!orderId || name.length < 2 || street.length < 3 || postcode.length < 3 || city.length < 2 || !COUNTRIES.includes(country))
+  if (!orderId || phone.replace(/\D/g, "").length < 8 || name.length < 2 || street.length < 3 || postcode.length < 3 || city.length < 2 || !COUNTRIES.includes(country))
     return NextResponse.json({ error: "invalid" }, { status: 400 });
   try {
     const ok = await setMissingAddress(orderId, { name, phone, address: `${street}, ${postcode} ${city}, ${country}` });

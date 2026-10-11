@@ -455,7 +455,7 @@ function CheckoutForm({
       <span className="micro">{t.shippingHead}</span>
       {field("name", t.name, { autoComplete: "name", maxLength: 120 })}
       {field("email", t.emailShort, { type: "email", autoComplete: "email", maxLength: 254 })}
-      {field("phone", t.phone, { type: "tel", autoComplete: "tel", maxLength: 30, placeholder: "+32 …" })}
+      {field("phone", t.phone, { type: "tel", autoComplete: "tel", maxLength: 30 })}
       {field("street", t.street, { autoComplete: "address-line1", maxLength: 200 })}
       <div className="checkout-row">
         {field("postcode", t.postcode, { autoComplete: "postal-code", maxLength: 12 })}
@@ -961,6 +961,17 @@ export default function Store({
                     lang={lang}
                     cartId={cartId}
                     label={t.expressOr}
+                    labels={{
+                      name: t.name,
+                      email: t.emailShort,
+                      phone: t.phone,
+                      street: t.street,
+                      postcode: t.postcode,
+                      city: t.city,
+                      country: t.country,
+                      countries: t.countries,
+                      needDetails: t.expressNeedDetails,
+                    }}
                   />
                 )}
               />
