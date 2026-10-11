@@ -81,9 +81,6 @@ export default async function Home() {
       <Store
         products={products.map(publicProduct)}
         live={live}
-        revolutPublicKey={
-          process.env.NEXT_PUBLIC_REVOLUT_PUBLIC_KEY || process.env.Revolut_public || process.env.REVOLUT_PUBLIC_KEY || ""
-        }
       />
     </>
   );

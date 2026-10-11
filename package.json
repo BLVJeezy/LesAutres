@@ -10,7 +10,6 @@
     "test": "node --experimental-strip-types --test lib/*.test.ts"
   },
   "dependencies": {
-    "@revolut/checkout": "^1.1.25",
     "@vercel/analytics": "^2.0.1",
     "firebase-admin": "^14.5.0",
     "framer-motion": "^12.0.0",
