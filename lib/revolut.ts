@@ -22,6 +22,8 @@ export type RevolutOrder = {
   customer?: { email?: string; full_name?: string; phone?: string };
   shipping?: { address?: RevolutAddress; contact?: { name?: string; email?: string; phone?: string } };
   shipping_address?: RevolutAddress;
+  /** Payment attempts on this order, with the bank's reason when declined. */
+  payments?: { id?: string; state?: string; decline_reason?: string; payment_method?: { type?: string; card_brand?: string } }[];
 };
 
 export type RevolutAddress = {
