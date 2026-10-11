@@ -99,6 +99,7 @@ export default async function Orders({
                           <span className="badge">Betaald</span>
                         )}
                         {o.test && <span className="badge attention">Test</span>}
+                        {!o.address && <span className="badge attention">Adres ontbreekt</span>}
                       </td>
                       <td className="c-ship">
                         <span className={`badge ${tone}`}>{label}</span>

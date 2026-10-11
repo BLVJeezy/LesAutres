@@ -565,3 +565,34 @@ export async function listAbandonedCheckouts(limit = 200) {
     .filter((o) => !o.test)
     .slice(0, limit);
 }
+
+/** Fills in the shipping address of a paid order that has none yet (express checkout), and tells the team. */
+export async function setMissingAddress(
+  orderId: string,
+  input: { name: string; phone: string; address: string },
+): Promise<boolean> {
+  const db = firestore();
+  if (!db || !/^[\w-]{1,64}$/.test(orderId)) return false;
+  const ref = db.collection(ORDERS).doc(orderId);
+  const ok = await db.runTransaction(async (tx) => {
+    const cur = (await tx.get(ref)).data() as OrderDoc | undefined;
+    if (!cur || cur.status !== "paid" || cur.address) return false;
+    tx.update(ref, {
+      address: input.address,
+      ...(!cur.name && input.name && { name: input.name }),
+      ...(!cur.phone && input.phone && { phone: input.phone }),
+      updatedAt: Date.now(),
+    });
+    return true;
+  });
+  if (ok && mailConfigured() && ORDER_NOTIFY.length) {
+    const s = await orderSummary(orderId);
+    if (s)
+      await sendMail(ORDER_NOTIFY, {
+        subject: `Adres ontvangen voor ${s.number} — ${s.order.name || s.order.email}`,
+        html: `<p>De klant vulde het verzendadres in na een express-betaling.</p><p><b>${s.order.name}</b><br>${s.order.address}<br>${s.order.phone}</p>`,
+        text: `Adres ontvangen voor ${s.number}\n${s.order.name}\n${s.order.address}\n${s.order.phone}`,
+      }).catch((error) => console.error("Address mail failed", error));
+  }
+  return ok;
+}
