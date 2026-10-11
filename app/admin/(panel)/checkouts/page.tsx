@@ -101,7 +101,10 @@ export default async function Checkouts() {
                       ))}
                     </td>
                     <td className="num">{money(c.total)}</td>
-                    <td>{status.get(c.id) ?? "—"}</td>
+                    <td>
+                      {status.get(c.id) ?? (c.paymentId ? "—" : "Niet doorgestuurd naar Revolut")}
+                      {c.revolutError && <div className="admin-note">Revolut: {c.revolutError}</div>}
+                    </td>
                     <td className="admin-hide-mobile">
                       {c.reminderSentAt ? fmt(Math.floor(c.reminderSentAt / 1000)) : "—"}
                     </td>

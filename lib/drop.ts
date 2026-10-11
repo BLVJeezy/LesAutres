@@ -2,6 +2,11 @@ import { BUNDLE_PRODUCTS } from "./bundles";
 import { firestore } from "./firebase";
 import { listOrders } from "./shop";
 
+/**
+ * When false, there is no stock cap: nobody is ever blocked at checkout and the counter is hidden.
+ * Turn on only for a real limited run (set STOCK_COUNT to the tees physically left).
+ */
+export const DROP_LIMIT_ACTIVE = false;
 /** Drop 001 is a limited run: this many tees in total, all sizes together. */
 export const DROP_LIMIT = 30;
 /**
@@ -32,6 +37,7 @@ async function reservedUnits(excludeCartId?: string) {
 
 /** Real availability: limit minus sold minus other people's active reservations. */
 export async function dropStatus(cartId?: string) {
+  if (!DROP_LIMIT_ACTIVE) return { active: false, limit: DROP_LIMIT, remaining: 999, sold: 0 };
   if (!firestore()) return { limit: DROP_LIMIT, remaining: STOCK_COUNT.left, sold: DROP_LIMIT - STOCK_COUNT.left };
   const [since, reserved] = await Promise.all([soldUnits(), reservedUnits(cartId)]);
   const left = Math.max(0, STOCK_COUNT.left - since);

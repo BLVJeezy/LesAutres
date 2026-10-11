@@ -640,7 +640,7 @@ export default function Store({
   const [sticky, setSticky] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [cartId, setCartId] = useState("");
-  const [drop, setDrop] = useState<{ limit: number; remaining: number } | null>(null);
+  const [drop, setDrop] = useState<{ limit: number; remaining: number; active?: boolean } | null>(null);
   const [reservedUntil, setReservedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const viewer = useRef<HTMLDivElement>(null);
@@ -722,7 +722,7 @@ export default function Store({
         body: JSON.stringify({ cartId, qty }),
       });
       const d = await r.json();
-      if (typeof d.remaining === "number") setDrop({ limit: d.limit, remaining: d.remaining });
+      if (typeof d.remaining === "number") setDrop({ limit: d.limit, remaining: d.remaining, active: d.active });
       if (r.ok) {
         setReservedUntil(d.expiresAt ?? null);
       } else if (r.status === 409) {
@@ -906,7 +906,7 @@ export default function Store({
             {!live && (
               <p className="preview-note">{t.preview}</p>
             )}
-            {drop && (
+            {drop && drop.active !== false && (
               <div
                 className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
                 aria-live="polite"
