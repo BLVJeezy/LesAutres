@@ -2869,3 +2869,12 @@ footer {
   .v2-campaign-grid { gap: 16px 10px; }
   .v2-footer-top { flex-direction: column; align-items: flex-start; }
 }
+@media (max-width: 700px) {
+  /* Whole photo visible on phones: same ratio as the image, no zoom/crop. */
+  .v2-hero { height: auto; min-height: 0; aspect-ratio: 1600 / 1070; }
+  .v2-hero img { object-position: center; }
+  .v2-hero-copy { left: 16px; bottom: 16px; gap: 6px; }
+  .v2-hero-copy h1 { font-size: 26px; letter-spacing: -0.5px; }
+  .v2-eyebrow.light { font-size: 9px; letter-spacing: 2px; }
+  .v2-btn.light { padding: 11px 22px; font-size: 10px; letter-spacing: 2px; margin-top: 4px; }
+}
