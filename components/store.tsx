@@ -964,7 +964,7 @@ export default function Store({
         <div className="v2-footer-top">
           <Image src="/images/les-autres-logo.png" alt="Les Autres" width={1504} height={540} sizes="180px" className="v2-footer-logo" />
           <nav>
-            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
+            <a href="https://www.instagram.com/lesautres/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
             <a href={`mailto:${company.email}`}>{t.home.contact.toUpperCase()}</a>
           </nav>
         </div>
