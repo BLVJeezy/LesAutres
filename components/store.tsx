@@ -570,6 +570,24 @@ function ProductImage({ src, alt, className, sizes: sizesAttr }: { src: string; 
     <img className={className} src={src} alt={alt} loading="lazy" />
   );
 }
+function V2Gallery({ images, alt }: { images: string[]; alt: string }) {
+  const [i, setI] = useState(0);
+  return (
+    <div className="v2-gallery">
+      <div className="v2-main">
+        <ProductImage src={images[i]} alt={i === 0 ? alt : `${alt} — ${i + 1}`} sizes="(max-width: 900px) 100vw, 55vw" className="v2-main-img" />
+      </div>
+      <div className="v2-thumbs">
+        {images.map((src, n) => (
+          <button key={src + n} aria-label={`${alt} ${n + 1}`} aria-current={n === i || undefined} onClick={() => setI(n)}>
+            <ProductImage src={src} alt="" sizes="96px" />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function MoreProduct({
   product,
   onAdd,
@@ -784,412 +802,192 @@ export default function Store({
   );
   return (
     <I18n.Provider value={t}>
-      <header className="nav">
-        <a href="#" aria-label="Les Autres, home">
-          <Wordmark />
+      <div className="v2-announce">
+        <span>{t.home.announce[0]}</span>
+        <span aria-hidden>—</span>
+        <span>{t.home.announce[1]}</span>
+      </div>
+      <header className="v2-header">
+        <a href="#drop" className="v2-nav-link">{t.home.shop}</a>
+        <a href="#" className="v2-logo" aria-label="Les Autres, home">
+          <Image src="/images/les-autres-logo.png" alt="Les Autres" width={1504} height={540} priority sizes="180px" />
         </a>
-        <nav>
-          <a href="#drop">DROP 001</a>
-          <a href="#perspective">THE PERSPECTIVE</a>
-        </nav>
-        <label className="lang-switch">
-          <span className="sr-only">{t.language}</span>
-          <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
-            {LANGS.map((l) => (
-              <option key={l} value={l}>
-                {l.toUpperCase()}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          className="bag"
-          aria-label={t.bagLabel(count)}
-          onClick={() => {
-            setError("");
-            setSheet("cart");
-          }}
-        >
-          <ShoppingBag size={19} />
-          <span>BAG ({count.toString().padStart(2, "0")})</span>
-        </button>
-      </header>
-      <main>
-        <section className="hero-section hero-logo">
-          <div className="hero-top micro">
-            <span>
-              INDEPENDENT LABEL
-              <br />
-              BELGIUM · EST. 2024
-            </span>
-            <span className="hero-world">
-              <Globe size={36} strokeWidth={0.8} />
-              <span>
-                WORLDWIDE
-                <br />
-                FOR THE OTHERS
-              </span>
-            </span>
-          </div>
-          <div className="hero-backdrop" aria-hidden>
-            <Image
-              src="/images/les-autres-logo.png"
-              alt=""
-              width={1504}
-              height={540}
-              priority
-              sizes="(max-width: 700px) 90vw, 70vw"
-            />
-          </div>
-          <div className="hero-title">
-            <h1 className="sr-only">Les Autres</h1>
-          </div>
-          <div className="hero-bottom">
-            <p>
-              SAME PEOPLE.
-              <br />
-              <span>DIFFERENT PERSPECTIVE.</span>
-            </p>
-            <a href="#drop" className="round-link" aria-label={t.discover}>
-              <ArrowDown size={22} />
-            </a>
-            <span className="micro">
-              NOT FOR EVERYONE.
-              <br />
-              FOR THE OTHERS.
-            </span>
-          </div>
-          <div className="hero-rule">
-            <span>01 / A DIFFERENT POINT OF VIEW</span>
-            <span>SCROLL TO EXPLORE ↓</span>
-          </div>
-        </section>
-        <section id="perspective" className="lookbook">
-          <div className="section-label">
-            <span>THE WORLD IS OUR BACKDROP.</span>
-            <span>DROP 001 · SHOT ON FILM</span>
-          </div>
-          <Lookbook photos={lookbook} />
-        </section>
-        <section id="drop" className="product-section">
-          <div
-            className="product-stage photo-mode"
-            ref={viewer}
+        <div className="v2-header-right">
+          <label className="v2-lang">
+            <span className="sr-only">{t.language}</span>
+            <select value={lang} onChange={(e) => setLang(e.target.value as Lang)}>
+              {LANGS.map((l) => (
+                <option key={l} value={l}>
+                  {l.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="v2-bag"
+            aria-label={t.bagLabel(count)}
+            onClick={() => {
+              setError("");
+              setSheet("cart");
+            }}
           >
-            <div className="stage-label">
-              <span className="micro">THE FIRST CHAPTER</span>
-              <span className="edition">001</span>
-            </div>
-            <div className="product-render">
-                <ProductGallery
-                  images={featured.images?.length ? featured.images : [featured.image]}
-                  alt={featured.name}
-                />
-            </div>
-            <div className="viewer-foot">
-              <span className="micro">240 GSM · 100% COTTON</span>
-            </div>
+            <span className="v2-bag-text">BAG ( {count} )</span>
+            <ShoppingBag size={22} strokeWidth={1.5} />
+          </button>
+        </div>
+      </header>
+      <main className="v2">
+        <section className="v2-hero">
+          <Image src="/images/lookbook-07.jpg" alt="De crew in The Baddies Tee" fill priority sizes="100vw" />
+          <div className="v2-hero-copy">
+            <span className="v2-eyebrow light">LES AUTRES × ISSAH</span>
+            <h1>THE BADDIES TEE</h1>
+            <a href="#drop" className="v2-btn light">{t.home.shopTee}</a>
           </div>
-          <div className="product-info">
-            <h2 className="product-title">
-              <span className="pink-dot" /> {featured.name.toUpperCase()}
-            </h2>
-            <div className="price-row">
-              <span>{money(price)}</span>
+        </section>
+
+        <section id="drop" className="v2-product" ref={viewer}>
+          <V2Gallery
+            images={[...(featured.images?.length ? featured.images : [featured.image]), "/images/model-studio.jpg", "/images/model-wall.jpg"]}
+            alt={featured.name}
+          />
+          <div className="v2-info">
+            <div className="v2-meta">
+              <span>LES AUTRES × ISSAH</span>
+              <span>DROP 001</span>
             </div>
-            {!live && (
-              <p className="preview-note">{t.preview}</p>
-            )}
-            {drop && drop.active !== false && (
-              <div
-                className={`drop-counter ${left !== null && left <= 10 ? "low" : ""} ${dropSoldOut ? "out" : ""}`}
-                aria-live="polite"
-                aria-label={dropSoldOut ? t.counterSoldOut  : t.counterLeft(left ?? 0, drop.limit)}
-              >
-                <div className="drop-counter-row">
-                  <span className="drop-live">
-                    <i /> LIVE
-                  </span>
-                  {dropSoldOut ? (
-                    <b className="word">{t.soldOut}</b>
-                  ) : (
-                    <b>
-                      {left}
-                      <em>/{drop.limit}</em> <small>{t.teesLeft}</small>
-                    </b>
-                  )}
-                  <span className="drop-limited">{t.limited}</span>
-                </div>
-                <div className="drop-segments" aria-hidden>
-                  {Array.from({ length: drop.limit }, (_, i) => (
-                    <span key={i} className={i >= Math.max(0, left ?? 0) ? "gone" : ""} />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="selector-head size-help">
-              <button className="text-button" onClick={() => setFitOpen((o) => !o)}>
-                {t.fitToggle} <ArrowUpRight size={12} />
+            <div className="v2-title-row">
+              <h2>{featured.name}</h2>
+              <span className="v2-price">{money(price)}</span>
+            </div>
+            <p className="v2-intro">
+              {t.home.intro[0]}
+              <br />
+              {t.home.intro[1]}
+            </p>
+            {!live && <p className="preview-note">{t.preview}</p>}
+            <div className="v2-color">
+              <span className="v2-label">{t.home.color}</span>
+              <span>{t.home.white}</span>
+              <span className="v2-swatch" aria-hidden />
+            </div>
+            <div className="v2-size-head">
+              <span className="v2-label">{t.home.chooseSize}</span>
+              <button className="v2-underline" onClick={() => setSheet("sizes")}>
+                {t.home.fit}
               </button>
-              <button className="text-button" onClick={() => setSheet("sizes")}>
-                {t.sizeChart} <ArrowUpRight size={12} />
-              </button>
+            </div>
+            <div className="v2-sizes">
+              {sizes.map((s) => (
+                <button
+                  key={s}
+                  aria-pressed={s === size}
+                  aria-label={soldOut(s) ? t.sizeSoldOut(s) : s}
+                  className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
+                  onClick={() => chooseSize(s)}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
             <FitAdvisor open={fitOpen} onPick={(s) => { chooseSize(s); trackEvent("size_advice", { size: s }); }} />
-            {BUNDLE_PRODUCTS.includes(featured.id) ? (
-              <BundlePicker
-                unit={price}
-                image={featured.image}
-                defaultSize={size}
-                maxQty={left === null ? 20 : Math.max(0, Math.min(20, left))}
-                soldOut={dropSoldOut}
-                isSoldOut={soldOut}
-                onAdd={addBundle}
-              />
-            ) : (
-              <>
-                <div className="sizes">
-                  {sizes.map((s) => (
-                    <button
-                      key={s}
-                      aria-pressed={s === size}
-                      aria-label={soldOut(s) ? t.sizeSoldOut(s) : s}
-                      className={`${s === size ? "selected" : ""} ${soldOut(s) ? "soldout" : ""}`}
-                      onClick={() => chooseSize(s)}
-                    >
-                      {s}
-                    </button>
-                  ))}
-                </div>
-                {cta}
-              </>
-            )}
-            <ul className="trust-list">
-              <li>
-                <Truck />
-                <span>
-                  <b>{t.trust[0][0]}</b>
-                  <small>{t.trust[0][1]}</small>
-                </span>
-              </li>
-              <li>
-                <RotateCcw />
-                <span>
-                  <b>{t.trust[1][0]}</b>
-                  <small>{t.trust[1][1]}</small>
-                </span>
-              </li>
-              <li>
-                <Lock />
-                <span>
-                  <b>{t.trust[2][0]}</b>
-                  <small>{t.trust[2][1]}</small>
-                </span>
-              </li>
-            </ul>
-            <div className="payment-logos">
-              <Image
-                src="/images/payment-methods.png"
-                alt={t.paymentAlt}
-                width={1200}
-                height={96}
-                sizes="(max-width: 700px) 80vw, 460px"
-              />
+            <button className="v2-cta" disabled={dropSoldOut} onClick={() => {
+                if (size) return add();
+                const el = document.querySelector(".v2-sizes");
+                el?.classList.remove("flash");
+                void (el as HTMLElement | null)?.offsetWidth;
+                el?.classList.add("flash");
+              }}>
+              {dropSoldOut ? t.soldOut : size ? `${t.addToBag} — ${money(price)}` : t.home.chooseSize.toUpperCase()}
+            </button>
+            <div className="v2-perks">
+              <span>{t.home.perks[0]}</span>
+              <span>{t.home.perks[1]}</span>
             </div>
-            {!live && (
-              <p className="tiny delivery">
-                {t.notLive}
-              </p>
-            )}
-            <div className="accordions">
-              {t.accordions.map(([title, body]) => ({ title, body })).map((item) => (
-                <details key={item.title}>
+            <div className="v2-accordions">
+              {t.accordions.map(([, body], i) => (
+                <details key={i}>
                   <summary>
-                    {item.title}
-                    <Plus size={16} />
+                    {t.home.accordionTitles[i]}
+                    <Plus size={20} strokeWidth={1.5} />
                   </summary>
-                  <p>{item.body}</p>
+                  <p>{body}</p>
                 </details>
               ))}
             </div>
           </div>
         </section>
-        <section className="anthem real-drop" id="in-real-life">
-          <div className="anthem-frame">
-            <video
-              src="/video/drop-001-unboxing.mp4"
-              poster="/video/drop-001-unboxing-poster.jpg"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              aria-label={t.unboxingAlt}
-            />
+
+        <section className="v2-campaign" id="perspective">
+          <div className="v2-campaign-head">
+            <h2>The campaign.</h2>
+            <span>LES AUTRES × ISSAH</span>
           </div>
-          <div className="anthem-copy">
-            <span className="micro">IN REAL LIFE</span>
-            <h2>
-              FRESH OFF
-              <br />
-              <span>THE PRESS.</span>
-            </h2>
-            <p>
-              {t.realLife}
-            </p>
-            <a href="#drop" className="buy">
-              <span>{t.claim} — {money(price)}</span>
-              <ArrowUpRight size={20} />
-            </a>
+          <div className="v2-campaign-grid">
+            <figure>
+              <div className="v2-frame tall">
+                <Image src="/images/lookbook-03.jpg" alt="Twee vrienden in The Baddies Tee in de studio" fill sizes="(max-width: 700px) 50vw, 33vw" />
+              </div>
+              <figcaption>01 / IN THE STUDIO</figcaption>
+            </figure>
+            <figure>
+              <div className="v2-frame tall">
+                <Image src="/images/lookbook-10.jpg" alt="De crew in The Baddies Tee" fill sizes="(max-width: 700px) 50vw, 33vw" />
+              </div>
+              <figcaption>02 / THE OTHERS</figcaption>
+            </figure>
+            <figure className="wide">
+              <div className="v2-frame wide">
+                <Image src="/images/lookbook-04.jpg" alt="Drie vrienden in The Baddies Tee" fill sizes="100vw" />
+              </div>
+              <figcaption>03 / LES AUTRES × ISSAH</figcaption>
+            </figure>
           </div>
         </section>
-        <section className="anthem" id="anthem">
-          <AnthemVideo />
-          <div className="anthem-copy">
-            <span className="micro">THE ANTHEM</span>
-            <h2>
-              BADDIES IN
-              <br />
-              <span>BELGICA.</span>
-            </h2>
-            <p>
-              {t.anthem}
-            </p>
-            <a href="#drop" className="buy">
-              <span>{t.shopTee} — {money(price)}</span>
-              <ArrowUpRight size={20} />
-            </a>
-          </div>
-        </section>
-        {products.length > 1 && (
-          <section className="more-products" id="more">
-            <div className="section-label">
-              <span>MORE FROM LES AUTRES.</span>
-              <span>DROP 001</span>
-            </div>
-            <div className="more-grid">
-              {products.slice(1).map((p) => (
-                <MoreProduct
-                  key={p.id}
-                  product={p}
-                  onAdd={(s) => addProduct(p.id, s)}
-                />
-              ))}
-            </div>
-          </section>
-        )}
-        <section className="crew" aria-label={t.crewLabel}>
-          <div className="crew-head">
-            <span className="micro">THE OTHERS</span>
-            <h2>
-              WORN BY
-              <br />
-              <span>THE CREW.</span>
-            </h2>
-            <p>{t.crewText}</p>
-            <a href="#drop" className="buy">
-              <span>{t.shopTee} — {money(price)}</span>
-              <ArrowUpRight size={20} />
-            </a>
-          </div>
-          <div className="crew-gallery">
-          <figure className="crew-a">
-            <Image src="/images/lookbook-10.jpg" alt="De crew in de Baddies Tee" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 30vw" />
-          </figure>
-          <figure className="crew-b">
-            <Image src="/images/lookbook-01.jpg" alt="Les Autres Baddies Tee op film" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 40vw" />
-          </figure>
-          <figure className="crew-c">
-            <Image src="/images/lookbook-05.jpg" alt="Baddies Tee vastgehouden aan de schouders" width={1070} height={1600} sizes="(max-width: 700px) 80vw, 20vw" />
-          </figure>
-          <figure className="crew-d">
-            <Image src="/images/lookbook-03.jpg" alt="Twee vrienden in de Baddies Tee" width={1600} height={1070} sizes="(max-width: 700px) 80vw, 25vw" />
-          </figure>
-          </div>
-        </section>
-        <section className="manifesto">
-          <span className="micro">IT WAS NEVER JUST A T-SHIRT.</span>
+
+        <section className="v2-perspective">
+          <span className="v2-eyebrow">THE PERSPECTIVE</span>
           <h2>
-            SAME PEOPLE.
+            Same people.
             <br />
-            <span>DIFFERENT</span>
-            <br />
-            PERSPECTIVE.
+            <span>Different perspective.</span>
           </h2>
-          <div className="manifesto-bottom">
-            <Globe size={64} strokeWidth={0.6} />
-            <p>
-              {t.manifesto[0]}
-              <br />
-              {t.manifesto[1]}
-              <br />
-              Les Autres. Since 2024.
-            </p>
-            <span className="micro">
-              BE YOURSELF.
-              <br />
-              THAT'S THE WHOLE POINT.
-            </span>
-          </div>
-        </section>
-        <section className="newsletter">
-          <div>
-            <span className="drop-label">STAY ON THE OTHER SIDE.</span>
-            <h2>
-              DON’T MISS
-              <br />
-              WHAT’S NEXT<span>.</span>
-            </h2>
-            <p>{t.newsletter}</p>
-          </div>
-          <Subscribe />
+          <p>
+            {t.home.perspectiveText[0]}
+            <br />
+            {t.home.perspectiveText[1]}
+          </p>
+          <a href="#drop" className="v2-underline big">{t.home.shopBaddies}</a>
         </section>
       </main>
-      <footer>
-        <div className="footer-top">
-          <Wordmark />
-          <span className="micro">
-            EST. 2024
-            <br />
-            WORLDWIDE FOR THE OTHERS
-          </span>
-          <a href="#drop">
-            BACK TO THE DROP <ArrowUpRight size={17} />
-          </a>
+      <footer className="v2-footer">
+        <div className="v2-footer-top">
+          <Image src="/images/les-autres-logo.png" alt="Les Autres" width={1504} height={540} sizes="180px" className="v2-footer-logo" />
+          <nav>
+            <a href="https://www.instagram.com/" target="_blank" rel="noopener noreferrer">INSTAGRAM</a>
+            <a href={`mailto:${company.email}`}>{t.home.contact.toUpperCase()}</a>
+          </nav>
         </div>
-        <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} LES AUTRES</span>
-          <div>
-            <Link href="/voorwaarden">{t.footer.terms}</Link>
-            <Link href="/privacy">{t.footer.privacy}</Link>
-            <Link href="/retour">{t.footer.returns}</Link>
-            <Link href="/verzending">{t.footer.shipping}</Link>
-            <Link href="/cookies">{t.footer.cookies}</Link>
-            <Link href="/herroepen">{t.footer.withdraw}</Link>
-            <button onClick={() => setConsent(null)}>{t.footer.cookieSettings}</button>
-          </div>
-          <span>BELGIUM, WORLDWIDE.</span>
+        <div className="v2-footer-links">
+          <Link href="/voorwaarden">{t.footer.terms}</Link>
+          <Link href="/privacy">{t.footer.privacy}</Link>
+          <Link href="/retour">{t.footer.returns}</Link>
+          <Link href="/verzending">{t.footer.shipping}</Link>
+          <Link href="/cookies">{t.footer.cookies}</Link>
+          <Link href="/herroepen">{t.footer.withdraw}</Link>
+          <button onClick={() => setConsent(null)}>{t.footer.cookieSettings}</button>
         </div>
-        {lang !== "nl" && <p className="business-note">{t.legalNote}</p>}
-        <p className="business-note">
+        {lang !== "nl" && <p className="v2-footer-note">{t.legalNote}</p>}
+        <p className="v2-footer-note">
+          © {new Date().getFullYear()} Les Autres ·{" "}
           {[
-            company.legalName && `${company.legalName}${company.legalForm ? ` ${company.legalForm}` : ""}`,
-            company.address,
+            company.legalName && `${company.legalName}`,
             company.enterpriseNumber && `Company No. ${company.enterpriseNumber}`,
-            company.vatNumber && company.vatNumber !== company.enterpriseNumber && `btw ${company.vatNumber}`,
             company.email,
           ]
             .filter(Boolean)
-            .join(" · ") || "Les Autres · België"}
+            .join(" · ")}
         </p>
-        <a
-          className="created-by"
-          href="https://solynglobal.be"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Created by Solyn Global <ArrowUpRight size={14} />
-        </a>
       </footer>
       {sticky && !sheet && (
         <div className="sticky-buy">
@@ -1325,7 +1123,7 @@ export default function Store({
                   );
                 })}
               </div>
-              {dropQty > 0 && reservedUntil && (
+              {dropQty > 0 && reservedUntil && drop?.active !== false && (
                 <div className={`reservation ${msLeft <= 0 ? "expired" : ""}`} role="status">
                   {msLeft > 0 ? (
                     <>
